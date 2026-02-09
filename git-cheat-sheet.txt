@@ -1,0 +1,19 @@
+git init
+Initialises a new Git repository in the current directory.
+Used when starting version control on a new project.
+
+git log
+Displays the commit history of the repository.
+Used to see previous commits and their messages.
+
+git show
+Shows details of a specific commit (changes, author, date).
+Used to inspect what changed in a particular commit.
+
+git checkout
+Switches branches or restores files from a previous commit.
+Used for moving between branches or discarding changes.
+
+git reset
+Moves the current branch pointer or unstages files.
+Used to undo commits or remove files from the staging area.
