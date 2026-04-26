@@ -1,7 +1,4 @@
 \# Group 8 Repository
-
-
-
 \## Group Members
 
 \- Bruce Jennings (20581042)
@@ -35,11 +32,13 @@ This project is built using CMake, Qt, VTK and Visual Studio in Release x64 mode
 - Add shrink and clip filters
 - Add VRRenderThread and start VR from the GUI
 - Create installer and GitHub release
+- 
 
 ## Setup Instructions
+This project needs Qt, VTK and OpenVR installed locally.
+Each machine may need to edit the paths at the top of `CMakeLists.txt`:
 
 To build this project:
-
 1. Install Qt and VTK
 2. Update the following paths in CMakeLists.txt:
 
@@ -47,6 +46,8 @@ To build this project:
 set(OpenVR_DIR "C:/OpenVR")
 set(OpenVR_INCLUDE_DIR "C:/OpenVR/headers")
 set(OpenVR_LIBRARY "C:/OpenVR/lib/win64/openvr_api.lib")
+
 set(VTK_DIR "C:/VTK9.6_MSVC2026/build")
+set(CMAKE_PREFIX_PATH "C:/Qt/Qt6.10.2/6.10.2/msvc2022_64") (ONLY ADD THIS ONE IF QT ERRORS SHOW DURING BUILD)
 
 Personally i run the project via Visual Studio using x64 Release
