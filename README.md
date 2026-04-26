@@ -30,9 +30,23 @@ This project is built using CMake, Qt, VTK and Visual Studio in Release x64 mode
 
 ## Next tasks
 
-- Add remove selected part
 - Add right-click context menu
 - Add colour, visibility and rename editing
 - Add shrink and clip filters
 - Add VRRenderThread and start VR from the GUI
 - Create installer and GitHub release
+
+## Setup Instructions
+
+To build this project:
+
+1. Install Qt and VTK
+2. Update the following paths in CMakeLists.txt:
+
+```cmake
+set(OpenVR_DIR "C:/OpenVR")
+set(OpenVR_INCLUDE_DIR "C:/OpenVR/headers")
+set(OpenVR_LIBRARY "C:/OpenVR/lib/win64/openvr_api.lib")
+set(VTK_DIR "C:/VTK9.6_MSVC2026/build")
+
+Personally i run the project via Visual Studio using x64 Release
