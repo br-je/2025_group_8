@@ -35,6 +35,8 @@ set(PROJECT_SOURCES
 	PartPropertiesDialog.cpp
 	PartPropertiesDialog.h
 	PartPropertiesDialog.ui
+    VRRenderThread.cpp
+    VRRenderThread.h
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

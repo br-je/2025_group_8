@@ -16,6 +16,7 @@
 
 #include <QMenu>
 #include <QAction>
+#include <vtkSphereSource.h>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -102,6 +103,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->ClearSelectionButton, &QPushButton::released,
             this, &MainWindow::handleClearSelection);
+
+	// Initialize VR thread pointer (EXPERIMENTAL - will be used in future VR implementation)
+    vrThread = nullptr;
+
+    connect(ui->StartVRButton, &QPushButton::released,
+        this, &MainWindow::startVR);
 }
 
 MainWindow::~MainWindow()
@@ -291,4 +298,33 @@ void MainWindow::removeSelectedItem()
     {
         emit statusUpdateMessage("Failed to remove selected item", 3000);
     }
+}
+
+//MAIN VR FUNCTION (EXPERIMENTAL - will be used in future VR implementation)
+void MainWindow::startVR()
+{
+    if (vrThread && vrThread->isRunning())
+    {
+        emit statusUpdateMessage("VR is already running", 3000);
+        return;
+    }
+
+    vrThread = new VRRenderThread(this);
+
+    vtkNew<vtkSphereSource> sphere;
+    sphere->SetRadius(1.0);
+    sphere->SetThetaResolution(32);
+    sphere->SetPhiResolution(32);
+
+    vtkNew<vtkPolyDataMapper> mapper;
+    mapper->SetInputConnection(sphere->GetOutputPort());
+
+    vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+    actor->GetProperty()->SetColor(0.2, 0.8, 1.0);
+
+    vrThread->addActorOffline(actor);
+    vrThread->start();
+
+    emit statusUpdateMessage("VR started", 3000);
 }

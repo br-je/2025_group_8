@@ -4,6 +4,7 @@
 #include "ModelPartList.h"
 #include <QMainWindow>
 #include <vtkSmartPointer.h>
+#include "VRRenderThread.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -36,6 +37,7 @@ private slots:
     void openContextMenu(const QPoint &pos);
     void removeSelectedItem();
     void on_actionOpen_File_triggered();
+    void startVR();
 
 public slots:
     void handleClearSelection();
@@ -48,6 +50,6 @@ private:
     void updateRender();
     void updateRenderFromTree(const QModelIndex& index);
     QModelIndex partsRootIndex;
-    
+    VRRenderThread* vrThread;
 };
 #endif // MAINWINDOW_H
