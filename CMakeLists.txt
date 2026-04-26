@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(Exercise_3 VERSION 0.1 LANGUAGES CXX)
+project(Group8_CAD_VR VERSION 0.1 LANGUAGES CXX)
 
 # ---- Local dependency paths ----
 # You need to change these to your appropriate locations if copying in order to build properly
@@ -38,34 +38,34 @@ set(PROJECT_SOURCES
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(Exercise_3
+    qt_add_executable(Group8_CAD_VR
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         icons.qrc
         partpropertiesdialog.h partpropertiesdialog.cpp partpropertiesdialog.ui
     )
 # Define target properties for Android with Qt 6 as:
-#    set_property(TARGET Exercise_3 APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
+#    set_property(TARGET Group8_CAD_VR APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
 #                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
 # For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
 else()
     if(ANDROID)
-        add_library(Exercise_3 SHARED
+        add_library(Group8_CAD_VR SHARED
             ${PROJECT_SOURCES}
         )
 # Define properties for Android with Qt 5 after find_package() calls as:
 #    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
     else()
-        add_executable(Exercise_3
+        add_executable(Group8_CAD_VR
             ${PROJECT_SOURCES}
         )
     endif()
 endif()
 
-target_link_libraries(Exercise_3 PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${VTK_LIBRARIES})
+target_link_libraries(Group8_CAD_VR PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${VTK_LIBRARIES})
 
 vtk_module_autoinit(
-    TARGETS Exercise_3
+    TARGETS Group8_CAD_VR
     MODULES ${VTK_LIBRARIES}
 )
 
@@ -73,9 +73,9 @@ vtk_module_autoinit(
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.
 if(${QT_VERSION} VERSION_LESS 6.1.0)
-  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.Exercise_3)
+  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.Group8_CAD_VR)
 endif()
-set_target_properties(Exercise_3 PROPERTIES
+set_target_properties(Group8_CAD_VR PROPERTIES
     ${BUNDLE_ID_OPTION}
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
@@ -84,14 +84,14 @@ set_target_properties(Exercise_3 PROPERTIES
 )
 
 include(GNUInstallDirs)
-install(TARGETS Exercise_3
+install(TARGETS Group8_CAD_VR
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(Exercise_3)
+    qt_finalize_executable(Group8_CAD_VR)
 endif()
 
 add_custom_target(VRBindings ALL)
