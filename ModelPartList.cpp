@@ -144,3 +144,39 @@ QModelIndex ModelPartList::appendChild(QModelIndex& parent, const QList<QVariant
     return child;
 }
 
+
+///** Remove a child item from the tree
+ /* @param row is the index of the item to remove
+  * @param count is the number of items to remove (starting at row)
+  * @param parent is the parent of the item to remove, default is root
+  * @return true if successful, false if not
+	  */
+bool ModelPartList::removeRows(int row, int count, const QModelIndex& parent)
+{
+    ModelPart* parentItem;
+
+    if (parent.isValid())
+        parentItem = static_cast<ModelPart*>(parent.internalPointer());
+    else
+        parentItem = rootItem;
+
+    if (!parentItem)
+        return false;
+
+    beginRemoveRows(parent, row, row + count - 1);
+
+    bool success = true;
+
+    for (int i = 0; i < count; ++i)
+    {
+        if (!parentItem->removeChild(row))
+        {
+            success = false;
+            break;
+        }
+    }
+
+    endRemoveRows();
+
+    return success;
+}

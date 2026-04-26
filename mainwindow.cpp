@@ -14,6 +14,9 @@
 #include <vtkCamera.h>
 #include <vtkNew.h>
 
+#include <QMenu>
+#include <QAction>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -184,15 +187,21 @@ void MainWindow::on_actionOpen_File_triggered()
 void MainWindow::openContextMenu(const QPoint &pos)
 {
     QModelIndex index = ui->treeView->indexAt(pos);
-    if (!index.isValid()) return;
 
-    ModelPart *part =
-        static_cast<ModelPart*>(index.internalPointer());
+    if (!index.isValid())
+        return;
 
-    if (!part) return;
+    ui->treeView->setCurrentIndex(index);
+
+    ModelPart *part = static_cast<ModelPart*>(index.internalPointer());
+
+    if (!part)
+        return;
 
     QMenu menu(this);
+
     QAction *editAction = menu.addAction("Edit Properties");
+    QAction *removeAction = menu.addAction("Remove Selected Item");
 
     QAction *selected =
         menu.exec(ui->treeView->viewport()->mapToGlobal(pos));
@@ -205,10 +214,13 @@ void MainWindow::openContextMenu(const QPoint &pos)
         if (dialog.exec() == QDialog::Accepted)
         {
             ui->treeView->viewport()->update();
-            //Render updates on each change to dialog box
             updateRender();
             emit statusUpdateMessage("Item properties updated", 3000);
         }
+    }
+    else if (selected == removeAction)
+    {
+        removeSelectedItem();
     }
 }
 
@@ -247,4 +259,36 @@ void MainWindow::handleClearSelection()
     ui->treeView->clearSelection();
     ui->treeView->setCurrentIndex(QModelIndex()); // clears current item
     emit statusUpdateMessage("Selection cleared", 2000);
+}
+
+void MainWindow::removeSelectedItem()
+{
+    QModelIndex index = ui->treeView->currentIndex();
+
+    if (!index.isValid())
+    {
+        emit statusUpdateMessage("No item selected to remove", 3000);
+        return;
+    }
+
+    if (index == partsRootIndex)
+    {
+        emit statusUpdateMessage("Cannot remove the main Parts folder", 3000);
+        return;
+    }
+
+    QModelIndex parentIndex = index.parent();
+    int row = index.row();
+
+    bool removed = partList->removeRow(row, parentIndex);
+
+    if (removed)
+    {
+        updateRender();
+        emit statusUpdateMessage("Selected item removed", 3000);
+    }
+    else
+    {
+        emit statusUpdateMessage("Failed to remove selected item", 3000);
+    }
 }

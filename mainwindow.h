@@ -30,12 +30,12 @@ public slots:
 
 public slots:
     void handleTreeClicked(const QModelIndex &index);
-
-private slots:
-    void on_actionOpen_File_triggered();
+    
 
 private slots:
     void openContextMenu(const QPoint &pos);
+    void removeSelectedItem();
+    void on_actionOpen_File_triggered();
 
 public slots:
     void handleClearSelection();
@@ -48,5 +48,6 @@ private:
     void updateRender();
     void updateRenderFromTree(const QModelIndex& index);
     QModelIndex partsRootIndex;
+    
 };
 #endif // MAINWINDOW_H

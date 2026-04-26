@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.16)
 
 project(Exercise_3 VERSION 0.1 LANGUAGES CXX)
 
+# ---- Local dependency paths ----
+# You need to change these to your appropriate locations if copying in order to build properly
+set(OpenVR_DIR "C:/OpenVR")
+set(OpenVR_INCLUDE_DIR "C:/OpenVR/headers")
+set(OpenVR_LIBRARY "C:/OpenVR/lib/win64/openvr_api.lib")
+
+set(VTK_DIR "C:/VTK9.6_MSVC2026/build")
+
 find_package(VTK REQUIRED)
 
 set(CMAKE_AUTOUIC ON)
@@ -86,7 +94,10 @@ if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(Exercise_3)
 endif()
 
-add_custom_target(VRBindings)
+add_custom_target(VRBindings ALL)
+
 add_custom_command(TARGET VRBindings PRE_BUILD
-COMMAND ${CMAKECOMMAND} -E
-		copy_directory ${CMAKE_SOURCE_DIR}/vrbindings ${CMAKE_BINARY_DIR}/)
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/vrbindings
+    ${CMAKE_BINARY_DIR}/vrbindings
+)

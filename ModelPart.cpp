@@ -156,6 +156,17 @@ void ModelPart::loadSTL( QString fileName ) {
 
 }
 
+
+//For removing selected item from treeview
+bool ModelPart::removeChild(int row)
+{
+    if (row < 0 || row >= m_childItems.size())
+        return false;
+
+    delete m_childItems.takeAt(row);
+    return true;
+}
+
 vtkSmartPointer<vtkActor> ModelPart::getActor() {
     /* This is a placeholder function that you will need to modify if you want to use it */
     

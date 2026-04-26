@@ -127,6 +127,9 @@ public:
       */
     //vtkActor* getNewActor();
 
+    //To remove selected item */
+    bool removeChild(int row);
+
 private:
     QList<ModelPart*>                           m_childItems;       /**< List (array) of child items */
     QList<QVariant>                             m_itemData;         /**< List (array of column data for item */
