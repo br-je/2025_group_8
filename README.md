@@ -30,9 +30,9 @@ This project is built using CMake, Qt, VTK and Visual Studio in Release x64 mode
 - Add right-click context menu
 - Add colour, visibility and rename editing
 - Add shrink and clip filters
-- Add VRRenderThread and start VR from the GUI
+- Imrpove VR Rendering function from the GUI
+(Currenty the VR render button only renders a cylinder - As ive only adapted the VR Demo provided in worksheet 7)
 - Create installer and GitHub release
-- 
 
 ## Setup Instructions
 This project needs Qt, VTK and OpenVR installed locally.
