@@ -311,17 +311,17 @@ void MainWindow::startVR()
 
     vrThread = new VRRenderThread(this);
 
-    vtkNew<vtkSphereSource> sphere;
-    sphere->SetRadius(1.0);
-    sphere->SetThetaResolution(32);
-    sphere->SetPhiResolution(32);
+    vtkNew<vtkCylinderSource> cylinder;
+    cylinder->SetResolution(8);
 
     vtkNew<vtkPolyDataMapper> mapper;
-    mapper->SetInputConnection(sphere->GetOutputPort());
+    mapper->SetInputConnection(cylinder->GetOutputPort());
 
     vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
-    actor->GetProperty()->SetColor(0.2, 0.8, 1.0);
+    actor->GetProperty()->SetColor(1.0, 0.3, 0.2);
+    actor->RotateX(30.0);
+    actor->RotateY(-45.0);
 
     vrThread->addActorOffline(actor);
     vrThread->start();

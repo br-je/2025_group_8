@@ -1,12 +1,17 @@
+//This is the adaptation of the VRTK Demo program.
+//It currently works using the "Start VR button" in the main window
 #include "VRRenderThread.h"
 
-#include <vtkNew.h>
+#include <vtkActor.h>
+#include <vtkOpenVRCamera.h>
 #include <vtkOpenVRRenderer.h>
 #include <vtkOpenVRRenderWindow.h>
 #include <vtkOpenVRRenderWindowInteractor.h>
-#include <vtkOpenVRCamera.h>
-#include <vtkOpenVRInteractorStyle.h>
-#include <vtkLight.h>
+#include <vtkProperty.h>
+#include <vtkNamedColors.h>
+#include <vtkNew.h>
+
+#include <array>
 
 VRRenderThread::VRRenderThread(QObject* parent)
     : QThread(parent)
@@ -20,30 +25,35 @@ void VRRenderThread::addActorOffline(vtkSmartPointer<vtkActor> actor)
 
 void VRRenderThread::run()
 {
-    vtkNew<vtkOpenVRRenderer> vrRenderer;
-    vtkNew<vtkOpenVRRenderWindow> vrRenderWindow;
-    vtkNew<vtkOpenVRRenderWindowInteractor> vrInteractor;
-    vtkNew<vtkOpenVRCamera> vrCamera;
-    vtkNew<vtkOpenVRInteractorStyle> vrStyle;
+    vtkNew<vtkNamedColors> colors;
 
-    vrRenderer->SetActiveCamera(vrCamera);
-    vrRenderWindow->AddRenderer(vrRenderer);
-    vrInteractor->SetRenderWindow(vrRenderWindow);
-    vrInteractor->SetInteractorStyle(vrStyle);
+    std::array<unsigned char, 4> bkg{ {26, 51, 102, 255} };
+    colors->SetColor("BkgColor", bkg.data());
+
+    vtkNew<vtkOpenVRRenderer> renderer;
 
     for (auto actor : actors)
     {
-        vrRenderer->AddActor(actor);
+        if (actor)
+        {
+            renderer->AddActor(actor);
+        }
     }
 
-    vtkNew<vtkLight> light;
-    light->SetLightTypeToSceneLight();
-    light->SetPosition(5, 5, 15);
-    light->SetPositional(true);
-    light->SetIntensity(0.8);
-    vrRenderer->AddLight(light);
+    renderer->SetBackground(colors->GetColor3d("BkgColor").GetData());
 
-    vrRenderer->ResetCamera();
-    vrRenderWindow->Render();
-    vrInteractor->Start();
+    vtkNew<vtkOpenVRCamera> cam;
+    renderer->SetActiveCamera(cam);
+
+    vtkNew<vtkOpenVRRenderWindow> renderWindow;
+    renderWindow->Initialize();
+    renderWindow->AddRenderer(renderer);
+    renderWindow->SetWindowName("Group8 CAD VR");
+
+    vtkNew<vtkOpenVRRenderWindowInteractor> renderWindowInteractor;
+    renderWindowInteractor->SetRenderWindow(renderWindow);
+    renderWindowInteractor->Initialize();
+
+    renderWindow->Render();
+    renderWindowInteractor->Start();
 }
