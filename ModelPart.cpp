@@ -18,6 +18,7 @@
 #include <vtkSTLReader.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
+#include <vtkProperty.h>
 
 
 ModelPart::ModelPart(const QList<QVariant>& data, ModelPart* parent )
@@ -102,11 +103,17 @@ int ModelPart::row() const {
     return 0;
 }
 
+//This function sets the colour of the part, and updates the colour of the actor if it exists.
+//Formaly a placeholder, but now fully functional.
 void ModelPart::setColour(const unsigned char R, const unsigned char G, const unsigned char B) {
-    //was placeholder
     colourR = R;
     colourG = G;
     colourB = B;
+
+    if (actor)
+    {
+        actor->GetProperty()->SetColor(R / 255.0, G / 255.0, B / 255.0);
+    }
 }
 
 unsigned char ModelPart::getColourR() {
@@ -125,10 +132,17 @@ unsigned char ModelPart::getColourB() {
     return colourB;
 }
 
-
+//Was placeholder, changed to work with vr rendering.
 void ModelPart::setVisible(bool visibleState) {
-    //was placeholder
     isVisible = visibleState;
+
+    if (actor)
+    {
+        actor->SetVisibility(visibleState);
+		// Ensure the actor's colour is updated to reflect visibility change
+        actor->GetProperty()->SetColor(colourR / 255.0, colourG / 255.0, colourB / 255.0);
+        actor->SetVisibility(isVisible);
+    }
 }
 
 bool ModelPart::visible() {
@@ -153,6 +167,8 @@ void ModelPart::loadSTL( QString fileName ) {
 
         actor = vtkSmartPointer<vtkActor>::New();
         actor->SetMapper(mapper);
+        actor->GetProperty()->SetColor(colourR / 255.0, colourG / 255.0, colourB / 255.0);
+        actor->SetVisibility(isVisible);
 
 }
 
@@ -177,6 +193,34 @@ vtkSmartPointer<vtkActor> ModelPart::getActor() {
     return actor;
 }
 
+vtkSmartPointer<vtkActor> ModelPart::getNewActor()
+{
+    if (!file || !actor)
+    {
+        return nullptr;
+    }
+
+    vtkSmartPointer<vtkPolyDataMapper> newMapper =
+        vtkSmartPointer<vtkPolyDataMapper>::New();
+
+    newMapper->SetInputConnection(file->GetOutputPort());
+
+    vtkSmartPointer<vtkActor> newActor =
+        vtkSmartPointer<vtkActor>::New();
+
+    newActor->SetMapper(newMapper);
+
+    // Share the visual properties with the GUI actor.
+    // This means colour changes made in the GUI are copied into VR.
+    newActor->SetProperty(actor->GetProperty());
+
+    newActor->SetVisibility(actor->GetVisibility());
+
+    return newActor;
+}
+
+//THE FOLLOWING COMMENTS ARE IN CASE THE PREVIOUS FUNCTIONS ARE NOT WORKING.
+//
 //vtkActor* ModelPart::getNewActor() {
     /* This is a placeholder function that you will need to modify if you want to use it
      * 

@@ -125,7 +125,7 @@ public:
     /** Return new actor for use in VR
       * @return pointer to new actor
       */
-    //vtkActor* getNewActor();
+    vtkSmartPointer<vtkActor> getNewActor();
 
     //To remove selected item */
     bool removeChild(int row);

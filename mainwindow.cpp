@@ -301,6 +301,37 @@ void MainWindow::removeSelectedItem()
 }
 
 //MAIN VR FUNCTION (EXPERIMENTAL - will be used in future VR implementation)
+int MainWindow::addVRActorsFromTree(const QModelIndex& index, VRRenderThread* thread)
+{
+    int actorCount = 0;
+
+    if (index.isValid())
+    {
+        ModelPart* part = static_cast<ModelPart*>(index.internalPointer());
+
+        if (part && part->visible())
+        {
+            vtkSmartPointer<vtkActor> vrActor = part->getNewActor();
+
+            if (vrActor)
+            {
+                thread->addActorOffline(vrActor);
+                actorCount++;
+            }
+        }
+    }
+
+    int rows = partList->rowCount(index);
+
+    for (int i = 0; i < rows; i++)
+    {
+        QModelIndex childIndex = partList->index(i, 0, index);
+        actorCount += addVRActorsFromTree(childIndex, thread);
+    }
+
+    return actorCount;
+}
+
 void MainWindow::startVR()
 {
     if (vrThread && vrThread->isRunning())
@@ -311,20 +342,37 @@ void MainWindow::startVR()
 
     vrThread = new VRRenderThread(this);
 
-    vtkNew<vtkCylinderSource> cylinder;
-    cylinder->SetResolution(8);
+    int actorCount = addVRActorsFromTree(QModelIndex(), vrThread);
 
-    vtkNew<vtkPolyDataMapper> mapper;
-    mapper->SetInputConnection(cylinder->GetOutputPort());
+    // Fallback test cylinder if no STL files have been loaded yet.
+    if (actorCount == 0)
+    {
+        vtkNew<vtkCylinderSource> cylinder;
+        cylinder->SetResolution(8);
 
-    vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
-    actor->SetMapper(mapper);
-    actor->GetProperty()->SetColor(1.0, 0.3, 0.2);
-    actor->RotateX(30.0);
-    actor->RotateY(-45.0);
+        vtkNew<vtkPolyDataMapper> mapper;
+        mapper->SetInputConnection(cylinder->GetOutputPort());
 
-    vrThread->addActorOffline(actor);
+        vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+        actor->SetMapper(mapper);
+        actor->GetProperty()->SetColor(1.0, 0.0, 0.35);
+        actor->RotateX(30.0);
+        actor->RotateY(45.0);
+
+        vrThread->addActorOffline(actor);
+
+        emit statusUpdateMessage("No STL loaded, showing test cylinder in VR", 3000);
+    }
+    else
+    {
+        emit statusUpdateMessage("Starting VR with loaded STL model", 3000);
+    }
+
+    connect(vrThread, &QThread::finished, vrThread, &QObject::deleteLater);
+
+    connect(vrThread, &QThread::finished, this, [this]() {
+        vrThread = nullptr;
+        });
+
     vrThread->start();
-
-    emit statusUpdateMessage("VR started", 3000);
 }

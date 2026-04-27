@@ -51,5 +51,6 @@ private:
     void updateRenderFromTree(const QModelIndex& index);
     QModelIndex partsRootIndex;
     VRRenderThread* vrThread;
+    int addVRActorsFromTree(const QModelIndex& index, VRRenderThread* thread);
 };
 #endif // MAINWINDOW_H
