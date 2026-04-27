@@ -35,23 +35,30 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton">
-        <property name="text">
-         <string>PushButton</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pushButton_2">
-        <property name="text">
-         <string>PushButton</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QPushButton" name="ClearSelectionButton">
         <property name="text">
          <string>Clear</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="ChangeColour">
+        <property name="text">
+         <string>Change Model Colour</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="ResetView">
+        <property name="text">
+         <string>Reset View</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton">
+        <property name="text">
+         <string>PushButton</string>
         </property>
        </widget>
       </item>
@@ -78,7 +85,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -86,6 +93,7 @@
      <string>File</string>
     </property>
     <addaction name="actionOpen_File"/>
+    <addaction name="actionHelp"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -101,6 +109,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionOpen_File"/>
+   <addaction name="actionHelp"/>
   </widget>
   <action name="actionOpen_File">
    <property name="icon">
@@ -112,6 +121,16 @@
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionHelp">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/Icons/help.png</normaloff>
+     <selectedoff>:/Icons/Icons/help.png</selectedoff>:/Icons/Icons/help.png</iconset>
+   </property>
+   <property name="text">
+    <string>Help</string>
    </property>
   </action>
  </widget>
