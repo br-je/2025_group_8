@@ -13,14 +13,53 @@
 
 #include <array>
 
+//These includes have been used to scale the objects in the scene
+#include <algorithm>
+#include <limits>
+
 VRRenderThread::VRRenderThread(QObject* parent)
     : QThread(parent)
 {
 }
 
+//This code is currently considered experimental
+//Values should be changed to perfectly fit the VR scene to scale the STL properly
 void VRRenderThread::addActorOffline(vtkSmartPointer<vtkActor> actor)
 {
-    actors.append(actor);
+    if (!this->isRunning() && actor)
+    {
+        double bounds[6];
+        actor->GetBounds(bounds);
+
+        double centreX = (bounds[0] + bounds[1]) / 2.0;
+        double centreY = (bounds[2] + bounds[3]) / 2.0;
+        double centreZ = (bounds[4] + bounds[5]) / 2.0;
+
+        double sizeX = bounds[1] - bounds[0];
+        double sizeY = bounds[3] - bounds[2];
+        double sizeZ = bounds[5] - bounds[4];
+
+        double maxSize = std::max(sizeX, std::max(sizeY, sizeZ));
+
+        if (maxSize > 0.0)
+        {
+            double scale = 1.5 / maxSize;
+
+            actor->SetScale(scale, scale, scale);
+
+            // Centre the model and place it roughly 2 metres in front of the user.
+            actor->SetPosition(
+                -centreX * scale,
+                -centreY * scale,
+                -centreZ * scale - 2.0
+            );
+
+            // Match the orientation used in the provided VRRenderThread example.
+            actor->RotateX(-90.0);
+        }
+
+        actors.append(actor);
+    }
 }
 
 void VRRenderThread::run()
