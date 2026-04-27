@@ -10,37 +10,48 @@
 \- Member 4 (StudentID)
 
 
-This repository contains the group Qt/VTK CAD viewer and VR demo project.
+# Group 8 – Qt / VTK CAD Viewer with VR
 
-## Current status
+This repository contains a Qt-based CAD viewer with VTK rendering and an OpenVR integration for immersive model viewing.
 
-- Qt GUI opens successfully
-- VTK render window works
-- Default cylinder renders on startup
-- STL files can be loaded through File/Open or the toolbar folder icon
-- Multiple STL files can be displayed together
-- Tree view is connected to loaded model parts
+---
 
-## Build notes
+## Current Status
 
-This project is built using CMake, Qt, VTK and Visual Studio in Release x64 mode.
+* Qt GUI fully functional
+* VTK render window integrated into UI
+* STL files can be loaded via File/Open or toolbar
+* Multiple STL files can be displayed simultaneously
+* Tree view reflects loaded model hierarchy
+* Right-click context menu (properties editing)
+* Colour changes applied to models in GUI
+* **VR integration working:**
 
-## Next tasks
+  * Start VR from GUI button
+  * Loaded STL models render in VR
+  * Multiple parts supported in VR
+  * Colour changes carry into VR
+  * Controller tracking working
 
-- Add right-click context menu
-- Add colour, visibility and rename editing
-- Add shrink and clip filters
-- Imrpove VR Rendering function from the GUI
-(Currenty the VR render button only renders a cylinder - As ive only adapted the VR Demo provided in worksheet 7)
-- Create installer and GitHub release
+---
+
+## Build Notes
+
+This project uses:
+
+* Qt 6.10.2 (MSVC 2022 64-bit)
+* VTK 9.6
+* OpenVR
+* CMake
+* Visual Studio (x64 Release recommended)
+
+---
 
 ## Setup Instructions
-This project needs Qt, VTK and OpenVR installed locally.
-Each machine may need to edit the paths at the top of `CMakeLists.txt`:
 
-To build this project:
-1. Install Qt and VTK
-2. Update the following paths in CMakeLists.txt:
+This project requires local installation of Qt, VTK, and OpenVR.
+
+Update the paths in `CMakeLists.txt` to match your system:
 
 ```cmake
 set(OpenVR_DIR "C:/OpenVR")
@@ -48,6 +59,54 @@ set(OpenVR_INCLUDE_DIR "C:/OpenVR/headers")
 set(OpenVR_LIBRARY "C:/OpenVR/lib/win64/openvr_api.lib")
 
 set(VTK_DIR "C:/VTK9.6_MSVC2026/build")
-set(CMAKE_PREFIX_PATH "C:/Qt/Qt6.10.2/6.10.2/msvc2022_64") (ONLY ADD THIS ONE IF QT ERRORS SHOW DURING BUILD)
 
-Personally i run the project via Visual Studio using x64 Release
+# Only required if Qt is not detected automatically:
+set(CMAKE_PREFIX_PATH "C:/Qt/Qt6.10.2/6.10.2/msvc2022_64")
+```
+
+### Build Steps
+
+1. Open the project in Visual Studio
+2. Ensure configuration is set to:
+
+   ```
+   x64-Release
+   ```
+3. Build the project
+4. Run the executable
+
+---
+
+## VR Usage
+
+1. Launch SteamVR
+2. Ensure headset and controllers are active
+3. Run the application
+4. Load an STL model
+5. Click **Start VR**
+
+Expected behaviour:
+
+* If no STL is loaded → test cylinder appears
+* If STL is loaded → model appears in VR space
+
+---
+
+## Next Tasks
+
+* Improve model positioning and scaling in VR
+* Implement visibility updates in VR
+* Add shrink and clip filters
+* Improve GUI controls for model interaction
+* Package application into installer
+* Prepare final demo
+
+---
+
+## Notes
+
+* Do not commit machine-specific paths in `CMakeLists.txt`
+* Use Git branches for major features
+* Ensure builds work in Release mode before committing
+
+---
