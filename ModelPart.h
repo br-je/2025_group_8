@@ -30,6 +30,8 @@
 #include <vtkShrinkFilter.h>
 #include <vtkClipDataSet.h>
 #include <vtkPlane.h>
+#include <vtkDataSetMapper.h>
+#include <vtkDataSet.h>
 
 class ModelPart {
 public:
@@ -179,6 +181,8 @@ private:
     bool invertClipFilter;
     vtkSmartPointer<vtkClipDataSet> clipFilter;
     vtkSmartPointer<vtkPlane> clipPlane;
+    vtkSmartPointer<vtkDataSetMapper> vrMapper;
+    vtkSmartPointer<vtkDataSet> vrFilteredData;
 };  
 
 

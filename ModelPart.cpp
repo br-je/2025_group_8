@@ -346,34 +346,106 @@ vtkSmartPointer<vtkActor> ModelPart::getNewActor()
         return nullptr;
     }
 
-    vtkSmartPointer<vtkDataSetMapper> newMapper =
-        vtkSmartPointer<vtkDataSetMapper>::New();
+    file->Update();
 
+    vtkSmartPointer<vtkDataSet> currentData =
+        vtkDataSet::SafeDownCast(file->GetOutput());
+
+    if (!currentData)
+    {
+        return nullptr;
+    }
+
+    // Apply shrink filter to VR actor if enabled
     if (applyShrinkFilter)
     {
         vtkSmartPointer<vtkShrinkFilter> newShrinkFilter =
             vtkSmartPointer<vtkShrinkFilter>::New();
 
-        newShrinkFilter->SetInputConnection(file->GetOutputPort());
+        newShrinkFilter->SetInputData(currentData);
         newShrinkFilter->SetShrinkFactor(shrinkFilterFactor);
         newShrinkFilter->Update();
 
-        newMapper->SetInputConnection(newShrinkFilter->GetOutputPort());
+        currentData = vtkDataSet::SafeDownCast(
+            newShrinkFilter->GetOutputDataObject(0)
+        );
+
+        if (!currentData)
+        {
+            return nullptr;
+        }
     }
-    else
+
+    // Apply clip filter to VR actor if enabled
+    if (applyClipFilter)
     {
-        newMapper->SetInputConnection(file->GetOutputPort());
+        int safeAxis = clipFilterAxis;
+        if (safeAxis < 0 || safeAxis > 2)
+        {
+            safeAxis = 0;
+        }
+
+        vtkSmartPointer<vtkPlane> newClipPlane =
+            vtkSmartPointer<vtkPlane>::New();
+
+        if (safeAxis == 0)
+            newClipPlane->SetNormal(1.0, 0.0, 0.0);
+        else if (safeAxis == 1)
+            newClipPlane->SetNormal(0.0, 1.0, 0.0);
+        else
+            newClipPlane->SetNormal(0.0, 0.0, 1.0);
+
+        double bounds[6];
+        currentData->GetBounds(bounds);
+
+        double minBound = bounds[safeAxis * 2];
+        double maxBound = bounds[safeAxis * 2 + 1];
+
+        double clipFraction = clipFilterValue / 100.0;
+        double clipPosition = minBound + clipFraction * (maxBound - minBound);
+
+        double origin[3] = {
+            (bounds[0] + bounds[1]) / 2.0,
+            (bounds[2] + bounds[3]) / 2.0,
+            (bounds[4] + bounds[5]) / 2.0
+        };
+
+        origin[safeAxis] = clipPosition;
+        newClipPlane->SetOrigin(origin);
+
+        vtkSmartPointer<vtkClipDataSet> newClipFilter =
+            vtkSmartPointer<vtkClipDataSet>::New();
+
+        newClipFilter->SetInputData(currentData);
+        newClipFilter->SetClipFunction(newClipPlane);
+        newClipFilter->SetInsideOut(invertClipFilter);
+        newClipFilter->Update();
+
+        currentData = vtkDataSet::SafeDownCast(
+            newClipFilter->GetOutputDataObject(0)
+        );
+
+        if (!currentData)
+        {
+            return nullptr;
+        }
     }
+
+    // Store the final filtered data so it stays alive while VR is running.
+    vrFilteredData = currentData;
+
+    vrMapper = vtkSmartPointer<vtkDataSetMapper>::New();
+    vrMapper->SetInputData(vrFilteredData);
 
     vtkSmartPointer<vtkActor> newActor =
         vtkSmartPointer<vtkActor>::New();
 
-    newActor->SetMapper(newMapper);
+    newActor->SetMapper(vrMapper);
 
-    // Share colour/material properties with GUI actor.
+    // Share the visual properties with the GUI actor.
+    // This means colour changes made in the GUI are copied into VR.
     newActor->SetProperty(actor->GetProperty());
 
-    // Copy current visibility state.
     newActor->SetVisibility(actor->GetVisibility());
 
     return newActor;
