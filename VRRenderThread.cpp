@@ -20,6 +20,12 @@
 //For skybox and floor aesthetics
 #include <vtkPlaneSource.h>
 #include <vtkPolyDataMapper.h>
+#include <vtkPNGReader.h>
+#include <vtkTexture.h>
+#include <vtkSphereSource.h>
+#include <QCoreApplication>
+#include <QDir>
+#include <QFileInfo>
 
 VRRenderThread::VRRenderThread(QObject* parent)
     : QThread(parent)
