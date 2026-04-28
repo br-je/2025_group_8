@@ -54,5 +54,6 @@ private:
     VRRenderThread* vrThread;
     int addVRActorsFromTree(const QModelIndex& index, VRRenderThread* thread);
     int loadSTLFilesFromDirectory(const QString& dirPath, QModelIndex parentIndex, bool recursive);
+    void applyPropertiesToChildren(ModelPart* parentPart);
 };
 #endif // MAINWINDOW_H

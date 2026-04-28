@@ -241,14 +241,47 @@ void MainWindow::openContextMenu(const QPoint &pos)
 
         if (dialog.exec() == QDialog::Accepted)
         {
+            // If the selected item is a folder/group, apply its colour and visibility
+            // to all child parts below it.
+            applyPropertiesToChildren(part);
+
             ui->treeView->viewport()->update();
             updateRender();
+
             emit statusUpdateMessage("Item properties updated", 3000);
         }
     }
     else if (selected == removeAction)
     {
         removeSelectedItem();
+    }
+}
+
+void MainWindow::applyPropertiesToChildren(ModelPart* parentPart)
+{
+    if (!parentPart)
+        return;
+
+    for (int i = 0; i < parentPart->childCount(); i++)
+    {
+        ModelPart* childPart = parentPart->child(i);
+
+        if (!childPart)
+            continue;
+
+        // Copy visibility from parent
+        childPart->set(1, parentPart->visible() ? "true" : "false");
+        childPart->setVisible(parentPart->visible());
+
+        // Copy colour from parent
+        childPart->setColour(
+            parentPart->getColourR(),
+            parentPart->getColourG(),
+            parentPart->getColourB()
+        );
+
+        // Recursively apply to children of children
+        applyPropertiesToChildren(childPart);
     }
 }
 
