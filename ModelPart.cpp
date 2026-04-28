@@ -19,6 +19,8 @@
 #include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
 #include <vtkProperty.h>
+#include <vtkShrinkFilter.h>
+#include <vtkDataSetMapper.h>
 
 
 ModelPart::ModelPart(const QList<QVariant>& data, ModelPart* parent )
@@ -251,20 +253,34 @@ vtkSmartPointer<vtkActor> ModelPart::getNewActor()
         return nullptr;
     }
 
-    vtkSmartPointer<vtkPolyDataMapper> newMapper =
-        vtkSmartPointer<vtkPolyDataMapper>::New();
+    vtkSmartPointer<vtkDataSetMapper> newMapper =
+        vtkSmartPointer<vtkDataSetMapper>::New();
 
-    newMapper->SetInputConnection(file->GetOutputPort());
+    if (applyShrinkFilter)
+    {
+        vtkSmartPointer<vtkShrinkFilter> newShrinkFilter =
+            vtkSmartPointer<vtkShrinkFilter>::New();
+
+        newShrinkFilter->SetInputConnection(file->GetOutputPort());
+        newShrinkFilter->SetShrinkFactor(shrinkFilterFactor);
+        newShrinkFilter->Update();
+
+        newMapper->SetInputConnection(newShrinkFilter->GetOutputPort());
+    }
+    else
+    {
+        newMapper->SetInputConnection(file->GetOutputPort());
+    }
 
     vtkSmartPointer<vtkActor> newActor =
         vtkSmartPointer<vtkActor>::New();
 
     newActor->SetMapper(newMapper);
 
-    // Share the visual properties with the GUI actor.
-    // This means colour changes made in the GUI are copied into VR.
+    // Share colour/material properties with GUI actor.
     newActor->SetProperty(actor->GetProperty());
 
+    // Copy current visibility state.
     newActor->SetVisibility(actor->GetVisibility());
 
     return newActor;
