@@ -18,6 +18,9 @@
 #include <QAction>
 #include <vtkSphereSource.h>
 
+#include <QDir>
+#include <QStringList>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -141,54 +144,72 @@ void MainWindow::on_actionOpen_File_triggered()
 {
     QString fileName = QFileDialog::getOpenFileName(
         this,
-        tr("Open STL"),
+        tr("Open STL File"),
         "C:\\",
         tr("STL Files (*.stl)")
-        );
+    );
 
     if (fileName.isEmpty())
         return;
 
     QFileInfo info(fileName);
 
-    QModelIndex index = ui->treeView->currentIndex();
+    QModelIndex parentIndex = partsRootIndex;
 
-    //Overwrite if a part is selected (and it's not the Parts folder)
-    if (index.isValid() && index != partsRootIndex)
-    {
-        ModelPart* part = static_cast<ModelPart*>(index.internalPointer());
-        if (!part)
-            return;
+    QModelIndex childIndex = partList->appendChild(
+        parentIndex,
+        { info.fileName(), QString("true") }
+    );
 
-        part->set(0, info.fileName());
-        part->loadSTL(fileName);
+    ModelPart* part = static_cast<ModelPart*>(childIndex.internalPointer());
+    if (!part)
+        return;
 
-        ui->treeView->viewport()->update();
-    }
-    else
-    {
-        //Add new STL under Parts folder
-        QModelIndex parentIndex = partsRootIndex;
+    part->loadSTL(fileName);
 
-        QModelIndex childIndex = partList->appendChild(
-            parentIndex,
-            { info.fileName(), QString("true") }
-            );
-
-        ModelPart* part = static_cast<ModelPart*>(childIndex.internalPointer());
-        if (!part)
-            return;
-
-        part->loadSTL(fileName);
-
-        ui->treeView->expand(parentIndex);
-        ui->treeView->setCurrentIndex(childIndex);
-        ui->treeView->viewport()->update();
-    }
+    ui->treeView->expand(parentIndex);
+    ui->treeView->setCurrentIndex(childIndex);
+    ui->treeView->viewport()->update();
 
     updateRender();
 
-    emit statusUpdateMessage("Loaded: " + info.fileName(), 3000);
+    emit statusUpdateMessage("Loaded STL file: " + info.fileName(), 3000);
+}
+
+void MainWindow::on_actionOpen_Folder_triggered()
+{
+    QString dirPath = QFileDialog::getExistingDirectory(
+        this,
+        tr("Open STL Folder"),
+        "C:\\"
+    );
+
+    if (dirPath.isEmpty())
+        return;
+
+    QFileInfo dirInfo(dirPath);
+
+    QModelIndex parentIndex = partsRootIndex;
+
+    QModelIndex folderIndex = partList->appendChild(
+        parentIndex,
+        { dirInfo.fileName(), QString("true") }
+    );
+
+    int fileCount = loadSTLFilesFromDirectory(dirPath, folderIndex, true);
+
+    ui->treeView->expand(parentIndex);
+    ui->treeView->expand(folderIndex);
+    ui->treeView->setCurrentIndex(folderIndex);
+    ui->treeView->viewport()->update();
+
+    updateRender();
+
+    emit statusUpdateMessage(
+        "Loaded folder: " + dirInfo.fileName() +
+        " (" + QString::number(fileCount) + " STL files)",
+        3000
+    );
 }
 
 void MainWindow::openContextMenu(const QPoint &pos)
@@ -375,4 +396,60 @@ void MainWindow::startVR()
         });
 
     vrThread->start();
+}
+
+// Recursively loads STL files from the specified directory and adds them to the model tree under the given parent index.
+int MainWindow::loadSTLFilesFromDirectory(const QString& dirPath, QModelIndex parentIndex, bool recursive)
+{
+    QDir dir(dirPath);
+    int loadedCount = 0;
+
+    QStringList stlFilters;
+    stlFilters << "*.stl" << "*.STL";
+
+    QFileInfoList stlFiles = dir.entryInfoList(
+        stlFilters,
+        QDir::Files,
+        QDir::Name
+    );
+
+    for (const QFileInfo& fileInfo : stlFiles)
+    {
+        QModelIndex childIndex = partList->appendChild(
+            parentIndex,
+            { fileInfo.fileName(), QString("true") }
+        );
+
+        ModelPart* part = static_cast<ModelPart*>(childIndex.internalPointer());
+
+        if (part)
+        {
+            part->loadSTL(fileInfo.absoluteFilePath());
+            loadedCount++;
+        }
+    }
+
+    if (recursive)
+    {
+        QFileInfoList subDirs = dir.entryInfoList(
+            QDir::Dirs | QDir::NoDotAndDotDot,
+            QDir::Name
+        );
+
+        for (const QFileInfo& subDirInfo : subDirs)
+        {
+            QModelIndex subFolderIndex = partList->appendChild(
+                parentIndex,
+                { subDirInfo.fileName(), QString("true") }
+            );
+
+            loadedCount += loadSTLFilesFromDirectory(
+                subDirInfo.absoluteFilePath(),
+                subFolderIndex,
+                true
+            );
+        }
+    }
+
+    return loadedCount;
 }

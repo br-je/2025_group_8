@@ -38,6 +38,7 @@ private slots:
     void removeSelectedItem();
     void on_actionOpen_File_triggered();
     void startVR();
+    void on_actionOpen_Folder_triggered();
 
 public slots:
     void handleClearSelection();
@@ -52,5 +53,6 @@ private:
     QModelIndex partsRootIndex;
     VRRenderThread* vrThread;
     int addVRActorsFromTree(const QModelIndex& index, VRRenderThread* thread);
+    int loadSTLFilesFromDirectory(const QString& dirPath, QModelIndex parentIndex, bool recursive);
 };
 #endif // MAINWINDOW_H

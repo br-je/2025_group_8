@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>600</height>
+    <height>612</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -31,6 +31,9 @@
        <widget class="QPushButton" name="StartVRButton">
         <property name="text">
          <string>Start VR</string>
+        </property>
+        <property name="icon">
+         <iconset theme="QIcon::ThemeIcon::MediaPlaybackStart"/>
         </property>
        </widget>
       </item>
@@ -85,7 +88,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>22</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -93,6 +96,7 @@
      <string>File</string>
     </property>
     <addaction name="actionOpen_File"/>
+    <addaction name="actionOpen_Folder"/>
     <addaction name="actionHelp"/>
    </widget>
    <addaction name="menuFile"/>
@@ -109,15 +113,16 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionOpen_File"/>
+   <addaction name="actionOpen_Folder"/>
    <addaction name="actionHelp"/>
   </widget>
   <action name="actionOpen_File">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Icons/Icons/fileopen.png</normaloff>:/Icons/Icons/fileopen.png</iconset>
+     <normaloff>:/Icons/Icons/print.png</normaloff>:/Icons/Icons/print.png</iconset>
    </property>
    <property name="text">
-    <string>Open File</string>
+    <string>Open STL File</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>
@@ -131,6 +136,15 @@
    </property>
    <property name="text">
     <string>Help</string>
+   </property>
+  </action>
+  <action name="actionOpen_Folder">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/Icons/fileopen.png</normaloff>:/Icons/Icons/fileopen.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open STL Folder</string>
    </property>
   </action>
  </widget>

@@ -2,5 +2,6 @@
     <qresource prefix="/Icons">
         <file>Icons/fileopen.png</file>
         <file>Icons/help.png</file>
+        <file>Icons/print.png</file>
     </qresource>
 </RCC>

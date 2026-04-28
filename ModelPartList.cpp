@@ -119,29 +119,28 @@ ModelPart* ModelPartList::getRootItem() {
 
 
 
-QModelIndex ModelPartList::appendChild(QModelIndex& parent, const QList<QVariant>& data) {      
-    ModelPart* parentPart;
+QModelIndex ModelPartList::appendChild(QModelIndex& parent, const QList<QVariant>& data)
+{
+    ModelPart* parentPart = nullptr;
 
     if (parent.isValid())
         parentPart = static_cast<ModelPart*>(parent.internalPointer());
-    else {
+    else
         parentPart = rootItem;
-        parent = createIndex(0, 0, rootItem );
-    }
 
-    beginInsertRows( parent, rowCount(parent), rowCount(parent) ); 
+    if (!parentPart)
+        return QModelIndex();
 
-    ModelPart* childPart = new ModelPart( data, parentPart );
+    int newRow = parentPart->childCount();
 
+    beginInsertRows(parent, newRow, newRow);
+
+    ModelPart* childPart = new ModelPart(data, parentPart);
     parentPart->appendChild(childPart);
-
-    QModelIndex child = createIndex(0, 0, childPart);
 
     endInsertRows();
 
-    emit layoutChanged();
-
-    return child;
+    return createIndex(newRow, 0, childPart);
 }
 
 
