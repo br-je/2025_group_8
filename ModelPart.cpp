@@ -36,6 +36,12 @@ ModelPart::ModelPart(const QList<QVariant>& data, ModelPart* parent )
     applyShrinkFilter = false;
     shrinkFilterFactor = 0.8;
 
+	    //default clip
+    applyClipFilter = false;
+    clipFilterAxis = 0;      // 0 = X, 1 = Y, 2 = Z
+    clipFilterValue = 50.0;
+    invertClipFilter = false;
+
 }
 
 
@@ -156,33 +162,89 @@ bool ModelPart::visible() {
     return isVisible;
 }
 
-//This function updates the VTK pipeline to apply the shrink filter if enabled, and ensures that any changes are reflected in the actor for rendering.
+//This function updates the VTK pipeline based on the current settings for the shrink and clip filters.
+// It checks if the file and mapper are valid, then applies the shrink filter if enabled,
+// followed by the clip filter if enabled. Finally, it updates the mapper's input connection to reflect the changes in the pipeline,
+// and marks the actor as modified to ensure it is re-rendered with the updated pipeline.
 void ModelPart::updatePipeline()
 {
     if (!file || !mapper)
         return;
 
+    vtkAlgorithmOutput* currentOutput = file->GetOutputPort();
+
+	// If the shrink filter is enabled, we create a new vtkShrinkFilter and set its input connection to the current output of the pipeline.
     if (applyShrinkFilter)
     {
         shrinkFilter = vtkSmartPointer<vtkShrinkFilter>::New();
-        shrinkFilter->SetInputConnection(file->GetOutputPort());
+        shrinkFilter->SetInputConnection(currentOutput);
         shrinkFilter->SetShrinkFactor(shrinkFilterFactor);
         shrinkFilter->Update();
 
-        mapper->SetInputConnection(shrinkFilter->GetOutputPort());
+        currentOutput = shrinkFilter->GetOutputPort();
     }
-    else
+
+	// Similar to the shrink filter, if the clip filter is enabled, we create a new vtkPlane based on the specified axis and value,
+    // and apply the vtkClipDataSet filter to the current output of the pipeline. The resulting clipped output
+    // is then used as the new input for the mapper. (Adaption from provided worksheet)
+    if (applyClipFilter)
     {
-        mapper->SetInputConnection(file->GetOutputPort());
+        clipPlane = vtkSmartPointer<vtkPlane>::New();
+
+        if (clipFilterAxis == 0)
+            clipPlane->SetNormal(1.0, 0.0, 0.0);
+        else if (clipFilterAxis == 1)
+            clipPlane->SetNormal(0.0, 1.0, 0.0);
+        else
+            clipPlane->SetNormal(0.0, 0.0, 1.0);
+
+
+		//IMPORTANT THIS SECTION MAY NOT WORK PROPERLY
+        if (clipFilterAxis < 0 || clipFilterAxis > 2)
+        {
+            clipFilterAxis = 0;
+        }
+
+        // Get bounds of the STL data
+        double bounds[6];
+        file->Update();
+        file->GetOutput()->GetBounds(bounds);
+
+        // Convert percentage (0–100) to actual position in model
+        double minBound = bounds[clipFilterAxis * 2];
+        double maxBound = bounds[clipFilterAxis * 2 + 1];
+
+        double clipFraction = clipFilterValue / 100.0;
+        double clipPosition = minBound + clipFraction * (maxBound - minBound);
+
+        // Start from centre of model
+        double origin[3] = {
+            (bounds[0] + bounds[1]) / 2.0,
+            (bounds[2] + bounds[3]) / 2.0,
+            (bounds[4] + bounds[5]) / 2.0
+        };
+
+        // Override selected axis
+        origin[clipFilterAxis] = clipPosition;
+
+        clipPlane->SetOrigin(origin);
+
+        clipFilter = vtkSmartPointer<vtkClipDataSet>::New();
+        clipFilter->SetInputConnection(currentOutput);
+        clipFilter->SetClipFunction(clipPlane);
+        clipFilter->SetInsideOut(invertClipFilter);
+        clipFilter->Update();
+
+        currentOutput = clipFilter->GetOutputPort();
     }
+
+    mapper->SetInputConnection(currentOutput);
 
     if (actor)
-    {
         actor->Modified();
-    }
 }
 
-//This function enables or disables the shrink filter and sets the shrink factor, then updates the pipeline to reflect the changes.
+// Shrink filter function
 void ModelPart::setShrinkFilter(bool enabled, double factor)
 {
     applyShrinkFilter = enabled;
@@ -199,6 +261,37 @@ bool ModelPart::shrinkFilterEnabled() const
 double ModelPart::shrinkFactor() const
 {
     return shrinkFilterFactor;
+}
+
+// Clip filter function
+void ModelPart::setClipFilter(bool enabled, int axis, double value, bool invert)
+{
+    applyClipFilter = enabled;
+    clipFilterAxis = axis;
+    clipFilterValue = value;
+    invertClipFilter = invert;
+
+    updatePipeline();
+}
+
+bool ModelPart::clipFilterEnabled() const
+{
+    return applyClipFilter;
+}
+
+int ModelPart::clipAxis() const
+{
+    return clipFilterAxis;
+}
+
+double ModelPart::clipValue() const
+{
+    return clipFilterValue;
+}
+
+bool ModelPart::clipInvert() const
+{
+    return invertClipFilter;
 }
 
 void ModelPart::loadSTL( QString fileName ) {

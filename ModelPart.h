@@ -28,6 +28,8 @@
 #include <vtkSTLReader.h>
 #include <vtkColor.h>
 #include <vtkShrinkFilter.h>
+#include <vtkClipDataSet.h>
+#include <vtkPlane.h>
 
 class ModelPart {
 public:
@@ -137,6 +139,13 @@ public:
     double shrinkFactor() const;
     void updatePipeline();
 
+	// Clip filter for VR rendering
+    void setClipFilter(bool enabled, int axis, double value, bool invert);
+    bool clipFilterEnabled() const;
+    int clipAxis() const;
+    double clipValue() const;
+    bool clipInvert() const;
+
 private:
     QList<ModelPart*>                           m_childItems;       /**< List (array) of child items */
     QList<QVariant>                             m_itemData;         /**< List (array of column data for item */
@@ -162,6 +171,14 @@ private:
     bool applyShrinkFilter;
     double shrinkFilterFactor;
     vtkSmartPointer<vtkShrinkFilter> shrinkFilter;
+
+	// Clip filter for VR rendering
+    bool applyClipFilter;
+    int clipFilterAxis;
+    double clipFilterValue;
+    bool invertClipFilter;
+    vtkSmartPointer<vtkClipDataSet> clipFilter;
+    vtkSmartPointer<vtkPlane> clipPlane;
 };  
 
 

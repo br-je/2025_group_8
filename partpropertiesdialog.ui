@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>460</width>
-    <height>241</height>
+    <width>462</width>
+    <height>330</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>120</x>
-     <y>200</y>
+     <x>140</x>
+     <y>290</y>
      <width>161</width>
      <height>32</height>
     </rect>
@@ -160,12 +160,101 @@
     <rect>
      <x>220</x>
      <y>150</y>
-     <width>111</width>
+     <width>181</width>
      <height>24</height>
     </rect>
    </property>
    <property name="text">
-    <string>Apply filter</string>
+    <string>Apply Shrink filter</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>190</y>
+     <width>81</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Clip Filter</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="clipCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>220</x>
+     <y>220</y>
+     <width>161</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Apply Clip Filter</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="clipAxisComboBox">
+   <property name="geometry">
+    <rect>
+     <x>120</x>
+     <y>190</y>
+     <width>81</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <item>
+    <property name="text">
+     <string>X</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>Y</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>Z</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QSpinBox" name="clipValueSpinBox">
+   <property name="geometry">
+    <rect>
+     <x>210</x>
+     <y>190</y>
+     <width>81</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="suffix">
+    <string>%</string>
+   </property>
+   <property name="minimum">
+    <number>0</number>
+   </property>
+   <property name="maximum">
+    <number>100</number>
+   </property>
+   <property name="singleStep">
+    <number>5</number>
+   </property>
+   <property name="value">
+    <number>50</number>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="clipInvertCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>120</x>
+     <y>220</y>
+     <width>91</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Invert Clip</string>
    </property>
   </widget>
  </widget>

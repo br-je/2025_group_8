@@ -286,6 +286,14 @@ void MainWindow::applyPropertiesToChildren(ModelPart* parentPart)
             parentPart->shrinkFactor()
         );
 
+		// Copy clip filter settings from parent
+        childPart->setClipFilter(
+            parentPart->clipFilterEnabled(),
+            parentPart->clipAxis(),
+            parentPart->clipValue(),
+            parentPart->clipInvert()
+        );
+
         // Recursively apply to children of children
         applyPropertiesToChildren(childPart);
     }
