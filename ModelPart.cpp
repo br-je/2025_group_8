@@ -29,6 +29,10 @@ ModelPart::ModelPart(const QList<QVariant>& data, ModelPart* parent )
     colourR = 255;
     colourG = 255;
     colourB = 255;
+    
+	    //default shrink
+    applyShrinkFilter = false;
+    shrinkFilterFactor = 0.8;
 
 }
 
@@ -150,6 +154,51 @@ bool ModelPart::visible() {
     return isVisible;
 }
 
+//This function updates the VTK pipeline to apply the shrink filter if enabled, and ensures that any changes are reflected in the actor for rendering.
+void ModelPart::updatePipeline()
+{
+    if (!file || !mapper)
+        return;
+
+    if (applyShrinkFilter)
+    {
+        shrinkFilter = vtkSmartPointer<vtkShrinkFilter>::New();
+        shrinkFilter->SetInputConnection(file->GetOutputPort());
+        shrinkFilter->SetShrinkFactor(shrinkFilterFactor);
+        shrinkFilter->Update();
+
+        mapper->SetInputConnection(shrinkFilter->GetOutputPort());
+    }
+    else
+    {
+        mapper->SetInputConnection(file->GetOutputPort());
+    }
+
+    if (actor)
+    {
+        actor->Modified();
+    }
+}
+
+//This function enables or disables the shrink filter and sets the shrink factor, then updates the pipeline to reflect the changes.
+void ModelPart::setShrinkFilter(bool enabled, double factor)
+{
+    applyShrinkFilter = enabled;
+    shrinkFilterFactor = factor;
+
+    updatePipeline();
+}
+
+bool ModelPart::shrinkFilterEnabled() const
+{
+    return applyShrinkFilter;
+}
+
+double ModelPart::shrinkFactor() const
+{
+    return shrinkFilterFactor;
+}
+
 void ModelPart::loadSTL( QString fileName ) {
     /* This is a placeholder function that you will need to modify if you want to use it */
     /* 1. Use the vtkSTLReader class to load the STL file 
@@ -162,13 +211,15 @@ void ModelPart::loadSTL( QString fileName ) {
         file->SetFileName(fileName.toStdString().c_str());
         file->Update();
 
-        mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+        mapper = vtkSmartPointer<vtkDataSetMapper>::New();
         mapper->SetInputConnection(file->GetOutputPort());
 
         actor = vtkSmartPointer<vtkActor>::New();
         actor->SetMapper(mapper);
         actor->GetProperty()->SetColor(colourR / 255.0, colourG / 255.0, colourB / 255.0);
         actor->SetVisibility(isVisible);
+
+        updatePipeline();
 
 }
 

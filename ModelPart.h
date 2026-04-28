@@ -27,6 +27,7 @@
 #include <vtkActor.h>
 #include <vtkSTLReader.h>
 #include <vtkColor.h>
+#include <vtkShrinkFilter.h>
 
 class ModelPart {
 public:
@@ -130,6 +131,12 @@ public:
     //To remove selected item */
     bool removeChild(int row);
 
+	// Shrink filter for VR rendering
+    void setShrinkFilter(bool enabled, double factor);
+    bool shrinkFilterEnabled() const;
+    double shrinkFactor() const;
+    void updatePipeline();
+
 private:
     QList<ModelPart*>                           m_childItems;       /**< List (array) of child items */
     QList<QVariant>                             m_itemData;         /**< List (array of column data for item */
@@ -150,6 +157,11 @@ private:
     vtkSmartPointer<vtkMapper>                  mapper;             /**< Mapper for rendering */
     vtkSmartPointer<vtkActor>                   actor;              /**< Actor for rendering */
     vtkColor3<unsigned char>                    colour;             /**< User defineable colour */
+
+	// Shrink filter for VR rendering
+    bool applyShrinkFilter;
+    double shrinkFilterFactor;
+    vtkSmartPointer<vtkShrinkFilter> shrinkFilter;
 };  
 
 

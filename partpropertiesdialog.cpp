@@ -29,6 +29,10 @@ void PartPropertiesDialog::setModelPart(ModelPart *part)
 
     // Visibility
     ui->visibleCheckBox->setChecked(currentPart->visible());
+
+	//Shrink filter
+    ui->shrinkCheckBox->setChecked(currentPart->shrinkFilterEnabled());
+    ui->shrinkFactorSpinBox->setValue(currentPart->shrinkFactor());
 }
 
 void PartPropertiesDialog::accept()
@@ -50,6 +54,13 @@ void PartPropertiesDialog::accept()
                        1,
             ui->visibleCheckBox->isChecked() ? "true" : "false");
         currentPart->setVisible(ui->visibleCheckBox->isChecked());
+
+
+		//Shrink filter
+        currentPart->setShrinkFilter(
+            ui->shrinkCheckBox->isChecked(),
+            ui->shrinkFactorSpinBox->value()
+        );
     }
 
     QDialog::accept();

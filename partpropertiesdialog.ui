@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>189</height>
+    <width>460</width>
+    <height>241</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>120</x>
-     <y>160</y>
+     <y>200</y>
      <width>161</width>
      <height>32</height>
     </rect>
@@ -47,7 +47,7 @@
     <rect>
      <x>100</x>
      <y>30</y>
-     <width>113</width>
+     <width>311</width>
      <height>22</height>
     </rect>
    </property>
@@ -57,7 +57,7 @@
     <rect>
      <x>20</x>
      <y>70</y>
-     <width>71</width>
+     <width>91</width>
      <height>16</height>
     </rect>
    </property>
@@ -68,7 +68,7 @@
   <widget class="QSpinBox" name="redSpinBox">
    <property name="geometry">
     <rect>
-     <x>100</x>
+     <x>120</x>
      <y>70</y>
      <width>81</width>
      <height>22</height>
@@ -81,7 +81,7 @@
   <widget class="QSpinBox" name="greenSpinBox">
    <property name="geometry">
     <rect>
-     <x>190</x>
+     <x>210</x>
      <y>70</y>
      <width>91</width>
      <height>22</height>
@@ -94,7 +94,7 @@
   <widget class="QSpinBox" name="blueSpinBox">
    <property name="geometry">
     <rect>
-     <x>290</x>
+     <x>310</x>
      <y>70</y>
      <width>81</width>
      <height>22</height>
@@ -118,6 +118,54 @@
    </property>
    <property name="checked">
     <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>150</y>
+     <width>91</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Shrink Factor</string>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="shrinkFactorSpinBox">
+   <property name="geometry">
+    <rect>
+     <x>120</x>
+     <y>150</y>
+     <width>91</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="minimum">
+    <double>0.100000000000000</double>
+   </property>
+   <property name="maximum">
+    <double>1.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.050000000000000</double>
+   </property>
+   <property name="value">
+    <double>0.800000000000000</double>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="shrinkCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>220</x>
+     <y>150</y>
+     <width>111</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Apply filter</string>
    </property>
   </widget>
  </widget>

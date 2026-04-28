@@ -280,6 +280,12 @@ void MainWindow::applyPropertiesToChildren(ModelPart* parentPart)
             parentPart->getColourB()
         );
 
+		// Copy shrink filter settings from parent
+        childPart->setShrinkFilter(
+            parentPart->shrinkFilterEnabled(),
+            parentPart->shrinkFactor()
+        );
+
         // Recursively apply to children of children
         applyPropertiesToChildren(childPart);
     }

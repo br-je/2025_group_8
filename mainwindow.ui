@@ -45,13 +45,6 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="ChangeColour">
-        <property name="text">
-         <string>Change Model Colour</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QPushButton" name="ResetView">
         <property name="text">
          <string>Reset View</string>
