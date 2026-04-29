@@ -56,6 +56,20 @@ The application follows a modular design:
 
 This separation improves maintainability and performance.
 
+## System Architecture Diagram
+
+\dot
+digraph G {
+  rankdir=TB;
+  node [shape=box, style=filled, color=lightblue];
+
+  MainWindow -> ModelPartList;
+  ModelPartList -> ModelPart;
+  ModelPart -> VTK;
+  MainWindow -> VRRenderThread;
+}
+\enddot
+
 
 
 \---
