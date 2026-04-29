@@ -44,17 +44,20 @@ The application follows a modular design:
 
 
 
-\- \*\*MainWindow\*\* → Handles GUI and user interaction  
-
-\- \*\*ModelPart / ModelPartList\*\* → Manage model hierarchy and data  
-
-\- \*\*VTK Renderer\*\* → Handles 3D visualisation  
-
-\- \*\*VRRenderThread\*\* → Runs VR rendering in a separate thread  
-
-
+- **MainWindow** → Handles GUI and user interaction
+  
+- **ModelPart / ModelPartList** → Manage model hierarchy and data
+  
+- **VTK Renderer** → Handles 3D visualisation
+  
+- **VRRenderThread** → Runs VR rendering in a separate thread
+  
 
 This separation improves maintainability and performance.
+
+
+
+\---
 
 
 
@@ -124,13 +127,13 @@ To run the application:
 
 ## Technologies Used
 
-\- \*\*Qt\*\* – Graphical User Interface (GUI)
-
-\- \*\*VTK (Visualization Toolkit)\*\* – 3D rendering engine
-
-\- \*\*OpenVR\*\* – Virtual reality integration
-
-\- \*\*C++\*\* – Core application development
+- **Qt** – Graphical User Interface (GUI)
+  
+- **VTK (Visualization Toolkit)** – 3D rendering engine
+  
+- **OpenVR** – Virtual reality integration
+  
+- **C++** – Core application development
 
 
 
