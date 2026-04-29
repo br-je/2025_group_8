@@ -1,8 +1,8 @@
-\# EEEE2076 VR CAD Viewer
+# EEEE2076 VR CAD Viewer
 
 
 
-\## Overview
+## Overview
 
 The VR CAD Viewer is a Qt-based application that allows users to load, visualise, and interact with 3D CAD models.  
 
@@ -18,7 +18,7 @@ This project demonstrates the use of software engineering principles to build an
 
 
 
-\## Key Features
+## Key Features
 
 \- Load and display multiple CAD models (STL format)
 
@@ -38,7 +38,7 @@ This project demonstrates the use of software engineering principles to build an
 
 
 
-\## System Architecture
+## System Architecture
 
 The application follows a modular design:
 
@@ -56,12 +56,22 @@ The application follows a modular design:
 
 This separation improves maintainability and performance.
 
+
+
 ## System Architecture Diagram
 
 \dot
 digraph G {
   rankdir=TB;
-  node [shape=box, style=filled, color=lightblue];
+  bgcolor="transparent";
+
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11];
+
+  MainWindow [label="MainWindow\n(GUI Controller)", fillcolor="#4A90E2", fontcolor="white"];
+  ModelPartList [label="ModelPartList\n(Data Manager)", fillcolor="#50C878"];
+  ModelPart [label="ModelPart\n(Model Node)", fillcolor="#50C878"];
+  VTK [label="VTK Renderer\n(3D Engine)", fillcolor="#F5A623"];
+  VRRenderThread [label="VRRenderThread\n(VR Engine)", fillcolor="#D0021B", fontcolor="white"];
 
   MainWindow -> ModelPartList;
   ModelPartList -> ModelPart;
@@ -76,7 +86,7 @@ digraph G {
 
 
 
-\## Installation
+## Installation
 
 To run the application:
 
@@ -94,7 +104,7 @@ To run the application:
 
 
 
-\## Usage
+## Usage
 
 1\. Open the application  
 
@@ -112,7 +122,7 @@ To run the application:
 
 
 
-\## Technologies Used
+## Technologies Used
 
 \- \*\*Qt\*\* – Graphical User Interface (GUI)
 
@@ -128,7 +138,7 @@ To run the application:
 
 
 
-\## Future Improvements
+## Future Improvements
 
 \- Support for additional CAD file formats  
 
@@ -144,7 +154,7 @@ To run the application:
 
 
 
-\## Team Members
+## Team Members
 
 * Bruce 
 * Simon 
