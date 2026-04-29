@@ -1,3 +1,10 @@
+/**
+ * @file partpropertiesdialog.h
+ * @brief Defines the PartPropertiesDialog class for editing ModelPart properties.
+ *
+ * Provides a dialog interface that allows users to modify properties such as
+ * colour and visibility of a selected model part.
+ */
 #include "partpropertiesdialog.h"
 #include "ui_partpropertiesdialog.h"
 
@@ -29,16 +36,6 @@ void PartPropertiesDialog::setModelPart(ModelPart *part)
 
     // Visibility
     ui->visibleCheckBox->setChecked(currentPart->visible());
-
-	//Shrink filter
-    ui->shrinkCheckBox->setChecked(currentPart->shrinkFilterEnabled());
-    ui->shrinkFactorSpinBox->setValue(currentPart->shrinkFactor());
-
-	//Clip filter
-    ui->clipCheckBox->setChecked(currentPart->clipFilterEnabled());
-    ui->clipAxisComboBox->setCurrentIndex(currentPart->clipAxis());
-    ui->clipValueSpinBox->setValue(currentPart->clipValue());
-    ui->clipInvertCheckBox->setChecked(currentPart->clipInvert());
 }
 
 void PartPropertiesDialog::accept()
@@ -60,21 +57,6 @@ void PartPropertiesDialog::accept()
                        1,
             ui->visibleCheckBox->isChecked() ? "true" : "false");
         currentPart->setVisible(ui->visibleCheckBox->isChecked());
-
-
-		//Shrink filter
-        currentPart->setShrinkFilter(
-            ui->shrinkCheckBox->isChecked(),
-            ui->shrinkFactorSpinBox->value());
-
-
-        //Clip filter
-        currentPart->setClipFilter(
-            ui->clipCheckBox->isChecked(),
-            ui->clipAxisComboBox->currentIndex(),
-            ui->clipValueSpinBox->value(),
-            ui->clipInvertCheckBox->isChecked());
-        
     }
 
     QDialog::accept();

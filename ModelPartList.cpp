@@ -1,11 +1,10 @@
-/**     @file ModelPartList.h
-  *
-  *     EEEE2076 - Software Engineering & VR Project
-  *
-  *     Template for model part list that will be used to create the trewview.
-  *
-  *     P Evans 2022
-  */
+/**
+ * @file ModelPartList.cpp
+ * @brief Implementation of the ModelPartList class.
+ *
+ * Provides the data model for the Qt tree view, managing the
+ * hierarchical structure of ModelPart objects.
+ */
 
 #include "ModelPartList.h"
 #include "ModelPart.h"
@@ -46,7 +45,7 @@ QVariant ModelPartList::data( const QModelIndex& index, int role ) const {
     /* Get a a pointer to the item referred to by the QModelIndex */
     ModelPart* item = static_cast<ModelPart*>( index.internalPointer() );
 
-    /* Each item in the tree has a number of columns ("Part" and "Visible" in this 
+    /* Each item in the tree has a number of columns ("Part" and "Visible" in this
      * initial example) return the column requested by the QModelIndex */
     return item->data( index.column() );
 }
@@ -70,17 +69,17 @@ QVariant ModelPartList::headerData( int section, Qt::Orientation orientation, in
 
 QModelIndex ModelPartList::index(int row, int column, const QModelIndex& parent) const {
     ModelPart* parentItem;
-    
+
     if( !parent.isValid() || !hasIndex(row, column, parent) )
-        parentItem = rootItem;              // default to selecting root 
+        parentItem = rootItem;              // default to selecting root
     else
         parentItem = static_cast<ModelPart*>(parent.internalPointer());
 
     ModelPart* childItem = parentItem->child(row);
     if( childItem )
         return createIndex(row, column, childItem);
-    
-    
+
+
     return QModelIndex();
 }
 
@@ -114,7 +113,7 @@ int ModelPartList::rowCount( const QModelIndex& parent ) const {
 
 
 ModelPart* ModelPartList::getRootItem() {
-    return rootItem; 
+    return rootItem;
 }
 
 

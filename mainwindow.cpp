@@ -1,3 +1,7 @@
+/**
+ * @file ModelPart.cpp
+ * @brief Implementation of ModelPart class
+ */
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include <QMessageBox>
@@ -278,20 +282,6 @@ void MainWindow::applyPropertiesToChildren(ModelPart* parentPart)
             parentPart->getColourR(),
             parentPart->getColourG(),
             parentPart->getColourB()
-        );
-
-		// Copy shrink filter settings from parent
-        childPart->setShrinkFilter(
-            parentPart->shrinkFilterEnabled(),
-            parentPart->shrinkFactor()
-        );
-
-		// Copy clip filter settings from parent
-        childPart->setClipFilter(
-            parentPart->clipFilterEnabled(),
-            parentPart->clipAxis(),
-            parentPart->clipValue(),
-            parentPart->clipInvert()
         );
 
         // Recursively apply to children of children

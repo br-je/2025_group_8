@@ -1,3 +1,9 @@
+/**
+ * @file main.cpp
+ * @brief Entry point of the VR CAD Viewer application.
+ *
+ * Initializes the Qt application and launches the main window.
+ */
 #include "mainwindow.h"
 
 #include <QApplication>

@@ -1,3 +1,10 @@
+/**
+ * @file VRRenderThread.cpp
+ * @brief Implementation of the VRRenderThread class.
+ *
+ * Handles rendering of VTK actors in a separate thread to support
+ * smooth VR performance without blocking the main GUI.
+ */
 //This is the adaptation of the VRTK Demo program.
 //It currently works using the "Start VR button" in the main window
 #include "VRRenderThread.h"
@@ -16,16 +23,6 @@
 //These includes have been used to scale the objects in the scene
 #include <algorithm>
 #include <limits>
-
-//For skybox and floor aesthetics
-#include <vtkPlaneSource.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkPNGReader.h>
-#include <vtkTexture.h>
-#include <vtkSphereSource.h>
-#include <QCoreApplication>
-#include <QDir>
-#include <QFileInfo>
 
 VRRenderThread::VRRenderThread(QObject* parent)
     : QThread(parent)
@@ -144,27 +141,6 @@ void VRRenderThread::run()
         }
     }
 
-    // Add a simple floor to make the VR environment more realistic.
-    // This helps avoid the scene appearing as just a plain background colour.
-	// Play around with the floor position and size to best fit the CAD assembly and improve depth perception in VR.
-    vtkNew<vtkPlaneSource> floorSource;
-
-    double floorY = -1.0; // adjust height
-    floorSource->SetOrigin(-3.0, floorY, -5.0);
-    floorSource->SetPoint1(3.0, floorY, -5.0);
-    floorSource->SetPoint2(-3.0, floorY, 5.0);
-    floorSource->Update();
-
-    vtkNew<vtkPolyDataMapper> floorMapper;
-    floorMapper->SetInputConnection(floorSource->GetOutputPort());
-
-    vtkNew<vtkActor> floorActor;
-    floorActor->SetMapper(floorMapper);
-    floorActor->GetProperty()->SetColor(0.35, 0.35, 0.35);
-    floorActor->GetProperty()->SetOpacity(1.0);
-
-    renderer->AddActor(floorActor);
-
 	// Set a consistent background color for the VR scene
     renderer->SetBackground(colors->GetColor3d("BkgColor").GetData());
 
@@ -177,7 +153,7 @@ void VRRenderThread::run()
     renderWindow->Initialize();
     renderWindow->AddRenderer(renderer);
     renderWindow->SetWindowName("Group8 CAD VR");
-    
+
 	// The interactor will handle user input and allow for real-time interaction with the VR scene
     vtkNew<vtkOpenVRRenderWindowInteractor> renderWindowInteractor;
     renderWindowInteractor->SetRenderWindow(renderWindow);
