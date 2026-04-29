@@ -3035,3 +3035,8 @@ MSCGEN_TOOL            =
 # command).
 
 MSCFILE_DIRS           =
+
+HAVE_DOT = YES
+CALL_GRAPH = YES
+CALLER_GRAPH = YES
+CLASS_DIAGRAMS = YES
