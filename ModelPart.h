@@ -17,7 +17,7 @@
 #include <vtkColor.h>
 
 /**
- * @brief Represents one CAD model part in the application (TEST!!!!).
+ * @brief Represents one CAD model part in the application.
  *
  * Stores tree hierarchy information, display properties such as colour and
  * visibility, and the VTK objects needed to render an STL model.
