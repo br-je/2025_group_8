@@ -59,5 +59,6 @@ private:
     int loadSTLFilesFromDirectory(const QString& dirPath, QModelIndex parentIndex, bool recursive);
     void applyPropertiesToChildren(ModelPart* parentPart);
     bool vrAnimationEnabled = false;
+    void addPartToLiveVR(ModelPart* part);
 };
 #endif // MAINWINDOW_H

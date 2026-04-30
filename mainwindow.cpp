@@ -186,6 +186,7 @@ void MainWindow::on_actionOpen_File_triggered()
         return;
 
     part->loadSTL(fileName);
+    addPartToLiveVR(part);
 
     ui->treeView->expand(parentIndex);
     ui->treeView->setCurrentIndex(childIndex);
@@ -230,6 +231,26 @@ void MainWindow::on_actionOpen_Folder_triggered()
         " (" + QString::number(fileCount) + " STL files)",
         3000
     );
+}
+
+void MainWindow::addPartToLiveVR(ModelPart* part)
+{
+    if (!part)
+    {
+        return;
+    }
+
+    if (!vrThread || !vrThread->isRunning())
+    {
+        return;
+    }
+
+    vtkSmartPointer<vtkActor> vrActor = part->getNewActor();
+
+    if (vrActor)
+    {
+        vrThread->addActorOffline(vrActor);
+    }
 }
 
 void MainWindow::toggleVRAnimation()
@@ -570,6 +591,7 @@ int MainWindow::loadSTLFilesFromDirectory(const QString& dirPath, QModelIndex pa
         if (part)
         {
             part->loadSTL(fileInfo.absoluteFilePath());
+            addPartToLiveVR(part);
             loadedCount++;
         }
     }

@@ -30,6 +30,9 @@
 #include <QDir>
 #include <QFileInfo>
 
+//Live updating VR method https://doc.qt.io/qt-6/qmutexlocker.html (Experimental, but prevents crashing currently)
+#include <QMutexLocker>
+
 
 VRRenderThread::VRRenderThread(QObject* parent)
     : QThread(parent)
@@ -38,13 +41,25 @@ VRRenderThread::VRRenderThread(QObject* parent)
 
 //This code is currently considered experimental
 //Values should be changed to perfectly fit the VR scene to scale the STL properly
+//This function allows actors to be added to the VR scene both before and during VR runtime 
+//EDIT THIS FUNCTION IF CRASHES OCCUR WHEN ADDING ACTORS DURING VR RUNTIME
 void VRRenderThread::addActorOffline(vtkSmartPointer<vtkActor> actor)
 {
-    if (!this->isRunning() && actor)
+    if (!actor)
     {
-        // Do not scale or centre actors individually here.
-        // If each part is centred separately, the CAD assembly loses its correct layout.
+        return;
+    }
+
+    if (!this->isRunning())
+    {
+        // Before VR starts, actors can be added directly to the starting list.
         actors.append(actor);
+    }
+    else
+    {
+        // While VR is running, queue actors so the VR thread can add them safely.
+        QMutexLocker locker(&pendingActorsMutex);
+        pendingActors.append(actor);
     }
 }
 
@@ -159,6 +174,13 @@ void VRRenderThread::run()
             hasBounds = true;
         }
     }
+
+    double vrCentreX = 0.0;
+    double vrCentreY = 0.0;
+    double vrCentreZ = 0.0;
+    double vrScale = 1.0;
+    bool hasVRTransform = false;
+
     if (hasBounds)
     {
         double centreX = (globalBounds[0] + globalBounds[1]) / 2.0;
@@ -174,6 +196,12 @@ void VRRenderThread::run()
         if (maxSize > 0.0)
         {
             double scale = 1.5 / maxSize;
+
+            vrCentreX = centreX;
+            vrCentreY = centreY;
+            vrCentreZ = centreZ;
+            vrScale = scale;
+            hasVRTransform = true;
 
             for (auto actor : actors)
             {
@@ -296,6 +324,52 @@ void VRRenderThread::run()
         if (vrInteractor)
         {
             vrInteractor->ProcessEvents();
+        }
+
+        // Add any STL actors that were loaded while VR is already running.
+        // This is done inside the VR thread to avoid cross-thread VTK/OpenVR crashes.
+        QList<vtkSmartPointer<vtkActor>> actorsToAdd;
+
+        {
+            QMutexLocker locker(&pendingActorsMutex);
+            actorsToAdd = pendingActors;
+            pendingActors.clear();
+        }
+
+        for (auto actor : actorsToAdd)
+        {
+            if (!actor)
+            {
+                continue;
+            }
+
+            // Apply the same VR transform as the original loaded assembly.
+            if (hasVRTransform)
+            {
+                actor->SetScale(vrScale, vrScale, vrScale);
+                actor->SetPosition(
+                    -vrCentreX * vrScale,
+                    -vrCentreY * vrScale,
+                    -vrCentreZ * vrScale - 2.0
+                );
+                actor->RotateX(-90.0);
+            }
+
+            actors.append(actor);
+
+            double position[3];
+            double scale[3];
+            double orientation[3];
+
+            actor->GetPosition(position);
+            actor->GetScale(scale);
+            actor->GetOrientation(orientation);
+
+            originalPositions.append({ position[0], position[1], position[2] });
+            originalScales.append({ scale[0], scale[1], scale[2] });
+            originalOrientations.append({ orientation[0], orientation[1], orientation[2] });
+
+            renderer->AddActor(actor);
         }
 
         // Reset model actors back to their original VR transforms.

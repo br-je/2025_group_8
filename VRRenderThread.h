@@ -14,6 +14,9 @@
 
 #include <array>
 
+//Experimental adding STL during live VR
+#include <QMutex>
+
 
 class VRRenderThread : public QThread
 {
@@ -36,6 +39,8 @@ protected:
 
 private:
     QList<vtkSmartPointer<vtkActor>> actors;
+    QList<vtkSmartPointer<vtkActor>> pendingActors;
+    QMutex pendingActorsMutex;
 
     std::atomic<bool> stopRequested{ false };
     std::atomic<bool> resetRequested{ false };
@@ -44,6 +49,7 @@ private:
     QList<std::array<double, 3>> originalPositions;
     QList<std::array<double, 3>> originalScales;
     QList<std::array<double, 3>> originalOrientations;
+
 
     vtkSmartPointer<vtkOpenVRRenderWindowInteractor> vrInteractor;
     vtkSmartPointer<vtkOpenVRRenderWindow> vrRenderWindow;
