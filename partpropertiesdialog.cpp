@@ -1,12 +1,31 @@
 #include "partpropertiesdialog.h"
 #include "ui_partpropertiesdialog.h"
+#include <QPushButton>
 
-PartPropertiesDialog::PartPropertiesDialog(QWidget *parent)
+bool PartPropertiesDialog::removalRequested() const
+{
+    return removeItemRequested;
+}
+
+void PartPropertiesDialog::requestRemove()
+{
+    removeItemRequested = true;
+
+    // Close the dialog as accepted, but bypass PartPropertiesDialog::accept()
+    // so we do not apply name/colour/filter edits before removing the item.
+    QDialog::accept();
+}
+
+PartPropertiesDialog::PartPropertiesDialog(QWidget* parent)
     : QDialog(parent)
     , ui(new Ui::PartPropertiesDialog)
-    ,currentPart(nullptr)
+    , currentPart(nullptr)
+    , removeItemRequested(false)
 {
     ui->setupUi(this);
+
+    connect(ui->removeSelected, &QPushButton::clicked,
+        this, &PartPropertiesDialog::requestRemove);
 }
 
 PartPropertiesDialog::~PartPropertiesDialog()
@@ -16,6 +35,8 @@ PartPropertiesDialog::~PartPropertiesDialog()
 
 void PartPropertiesDialog::setModelPart(ModelPart *part)
 {
+    removeItemRequested = false;
+
     currentPart = part;
     if (!currentPart) return;
 
@@ -76,6 +97,8 @@ void PartPropertiesDialog::accept()
             ui->clipInvertCheckBox->isChecked());
         
     }
+
+
 
     QDialog::accept();
 }

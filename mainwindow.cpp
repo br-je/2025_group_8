@@ -275,7 +275,13 @@ void MainWindow::openContextMenu(const QPoint &pos)
 
         if (dialog.exec() == QDialog::Accepted)
         {
-            // If the selected item is a folder/group, apply its colour and visibility
+            if (dialog.removalRequested())
+            {
+                removeSelectedItem();
+                return;
+            }
+
+            // If the selected item is a folder/group, apply its colour, visibility and filters
             // to all child parts below it.
             applyPropertiesToChildren(part);
 
@@ -384,6 +390,14 @@ void MainWindow::removeSelectedItem()
     {
         emit statusUpdateMessage("Cannot remove the main Parts folder", 3000);
         return;
+    }
+
+    ModelPart* part = static_cast<ModelPart*>(index.internalPointer());
+
+    if (part)
+    {
+        part->setVisible(false);
+        applyPropertiesToChildren(part);
     }
 
     QModelIndex parentIndex = index.parent();

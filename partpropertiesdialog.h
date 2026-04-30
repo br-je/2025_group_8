@@ -17,13 +17,18 @@ public:
     ~PartPropertiesDialog();
 
     void setModelPart(ModelPart *part);
+    bool removalRequested() const;
 
 protected:
     void accept() override;
 
+private slots:
+    void requestRemove();
+
 private:
     Ui::PartPropertiesDialog *ui;
     ModelPart *currentPart;
+    bool removeItemRequested;
 };
 
 #endif // PARTPROPERTIESDIALOG_H
