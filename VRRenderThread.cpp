@@ -10,6 +10,7 @@
 #include <vtkProperty.h>
 #include <vtkNamedColors.h>
 #include <vtkNew.h>
+#include <vtkLight.h>
 
 #include <array>
 
@@ -26,6 +27,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
+
 
 VRRenderThread::VRRenderThread(QObject* parent)
     : QThread(parent)
@@ -63,6 +65,27 @@ void VRRenderThread::run()
     colors->SetColor("BkgColor", bkg.data());
 
     vtkNew<vtkOpenVRRenderer> renderer;
+
+    // Add improved lighting for the VR scene.
+    // A headlight keeps the model visible from the user's viewpoint.
+    vtkNew<vtkLight> headLight;
+    headLight->SetLightTypeToHeadlight();
+    headLight->SetIntensity(0.6);
+    renderer->AddLight(headLight);
+
+    // A scene light adds stronger directional lighting and depth.
+    // This follows the lighting approach suggested in the group task sheet.
+    vtkNew<vtkLight> sceneLight;
+    sceneLight->SetLightTypeToSceneLight();
+    sceneLight->SetPosition(5.0, 5.0, 15.0);
+    sceneLight->SetPositional(true);
+    sceneLight->SetConeAngle(30.0);
+    sceneLight->SetFocalPoint(0.0, 0.0, -2.0);
+    sceneLight->SetDiffuseColor(1.0, 1.0, 1.0);
+    sceneLight->SetAmbientColor(0.6, 0.6, 0.6);
+    sceneLight->SetSpecularColor(1.0, 1.0, 1.0);
+    sceneLight->SetIntensity(0.8);
+    renderer->AddLight(sceneLight);
 
     for (auto actor : actors)
     {
