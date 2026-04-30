@@ -12,6 +12,8 @@
 #include <vtkOpenVRRenderWindowInteractor.h>
 #include <vtkOpenVRRenderWindow.h>
 
+#include <array>
+
 
 class VRRenderThread : public QThread
 {
@@ -22,10 +24,12 @@ public:
 
     void addActorOffline(vtkSmartPointer<vtkActor> actor);
     void stopVR();
+    void resetView();
 
 	//Animation control
     void setAnimationEnabled(bool enabled);
     bool animationIsEnabled() const;
+
 
 protected:
     void run() override;
@@ -34,9 +38,17 @@ private:
     QList<vtkSmartPointer<vtkActor>> actors;
 
     std::atomic<bool> stopRequested{ false };
+    std::atomic<bool> resetRequested{ false };
     std::atomic<bool> animationEnabled{ false };
+
+    QList<std::array<double, 3>> originalPositions;
+    QList<std::array<double, 3>> originalScales;
+    QList<std::array<double, 3>> originalOrientations;
+
     vtkSmartPointer<vtkOpenVRRenderWindowInteractor> vrInteractor;
     vtkSmartPointer<vtkOpenVRRenderWindow> vrRenderWindow;
+
+
 
 };
 

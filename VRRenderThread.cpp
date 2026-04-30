@@ -58,6 +58,13 @@ bool VRRenderThread::animationIsEnabled() const
     return animationEnabled;
 }
 
+void VRRenderThread::resetView()
+{
+    // Only request the reset here.
+    // The VR thread will apply the actor transforms safely inside its render loop.
+    resetRequested = true;
+}
+
 //This function signals the VR render thread to stop and performs necessary cleanup of VR resources.
 void VRRenderThread::stopVR()
 {
@@ -190,6 +197,32 @@ void VRRenderThread::run()
         }
     }
 
+    // Store the initial VR transforms after scaling, positioning and orientation correction.
+    // These are used by Reset View to undo animation/rotation changes.
+    originalPositions.clear();
+    originalScales.clear();
+    originalOrientations.clear();
+
+    for (auto actor : actors)
+    {
+        if (!actor)
+        {
+            continue;
+        }
+
+        double position[3];
+        double scale[3];
+        double orientation[3];
+
+        actor->GetPosition(position);
+        actor->GetScale(scale);
+        actor->GetOrientation(orientation);
+
+        originalPositions.append({ position[0], position[1], position[2] });
+        originalScales.append({ scale[0], scale[1], scale[2] });
+        originalOrientations.append({ orientation[0], orientation[1], orientation[2] });
+    }
+
     // Add a simple floor to make the VR environment more realistic.
     // This helps avoid the scene appearing as just a plain background colour.
 	// Play around with the floor position and size to best fit the CAD assembly and improve depth perception in VR.
@@ -263,6 +296,49 @@ void VRRenderThread::run()
         if (vrInteractor)
         {
             vrInteractor->ProcessEvents();
+        }
+
+        // Reset model actors back to their original VR transforms.
+        // This is handled inside the VR thread to avoid cross-thread VTK issues.
+        if (resetRequested.exchange(false))
+        {
+            animationEnabled = false;
+
+            int count = std::min(
+                actors.size(),
+                std::min(originalPositions.size(),
+                    std::min(originalScales.size(), originalOrientations.size()))
+            );
+
+            for (int i = 0; i < count; i++)
+            {
+                vtkActor* actor = actors[i];
+
+                if (!actor)
+                {
+                    continue;
+                }
+
+                actor->SetPosition(
+                    originalPositions[i][0],
+                    originalPositions[i][1],
+                    originalPositions[i][2]
+                );
+
+                actor->SetScale(
+                    originalScales[i][0],
+                    originalScales[i][1],
+                    originalScales[i][2]
+                );
+
+                actor->SetOrientation(
+                    originalOrientations[i][0],
+                    originalOrientations[i][1],
+                    originalOrientations[i][2]
+                );
+
+                actor->Modified();
+            }
         }
 
         // Simple turntable animation for the loaded CAD model.

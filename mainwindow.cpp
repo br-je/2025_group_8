@@ -129,6 +129,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->StopVRButton, &QPushButton::released,
         this, &MainWindow::stopVR);
+
+    connect(ui->ResetView, &QPushButton::released,
+        this, &MainWindow::resetModelView);
 }
 
 MainWindow::~MainWindow()
@@ -244,6 +247,39 @@ void MainWindow::toggleVRAnimation()
         vrAnimationEnabled ? "VR animation enabled" : "VR animation disabled",
         3000
     );
+}
+
+void MainWindow::resetModelView()
+{
+    // Stop animation so the model stays at the reset position.
+    vrAnimationEnabled = false;
+    ui->pushButton->setText("Start Animation");
+
+    if (vrThread && vrThread->isRunning())
+    {
+        vrThread->setAnimationEnabled(false);
+        vrThread->resetView();
+    }
+
+    // Reset the GUI camera to fit the current model.
+    if (renderer)
+    {
+        renderer->ResetCamera();
+
+        if (renderer->GetActiveCamera())
+        {
+            renderer->GetActiveCamera()->Azimuth(30);
+            renderer->GetActiveCamera()->Elevation(30);
+            renderer->ResetCameraClippingRange();
+        }
+    }
+
+    if (renderWindow)
+    {
+        renderWindow->Render();
+    }
+
+    emit statusUpdateMessage("Model view reset", 3000);
 }
 
 void MainWindow::openContextMenu(const QPoint &pos)

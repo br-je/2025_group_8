@@ -41,6 +41,7 @@ private slots:
     void stopVR();
     void on_actionOpen_Folder_triggered();
     void toggleVRAnimation();
+    void resetModelView();
 
 public slots:
     void handleClearSelection();
