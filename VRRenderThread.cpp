@@ -199,7 +199,35 @@ void VRRenderThread::run()
     floorActor->GetProperty()->SetColor(0.35, 0.35, 0.35);
     floorActor->GetProperty()->SetOpacity(1.0);
 
+
+	//Add floor to the scene before the sky to ensure it appears in front of the skybox
     renderer->AddActor(floorActor);
+
+   // Add a simple environment sphere around the VR scene.
+   // This acts as a lightweight skybox/scenery without relying on image files.
+    vtkNew<vtkSphereSource> skySource;
+    skySource->SetRadius(25.0);
+    skySource->SetThetaResolution(64);
+    skySource->SetPhiResolution(32);
+    skySource->SetCenter(0.0, 0.0, -2.0);
+    skySource->Update();
+
+    vtkNew<vtkPolyDataMapper> skyMapper;
+    skyMapper->SetInputConnection(skySource->GetOutputPort());
+
+    vtkNew<vtkActor> skyActor;
+    skyActor->SetMapper(skyMapper);
+
+    // Make it look like a distant dark-blue VR environment.
+    skyActor->GetProperty()->SetColor(0.04, 0.07, 0.14);
+    skyActor->GetProperty()->SetAmbient(1.0);
+    skyActor->GetProperty()->SetDiffuse(0.0);
+    skyActor->GetProperty()->SetSpecular(0.0);
+
+    // Prevent the sky from being selected/interacted with.
+    skyActor->PickableOff();
+
+    renderer->AddActor(skyActor);
 
 	// Set a consistent background color for the VR scene
     renderer->SetBackground(colors->GetColor3d("BkgColor").GetData());
