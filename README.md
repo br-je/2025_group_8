@@ -17,44 +17,48 @@ This repository contains a Qt-based CAD viewer with VTK rendering and an OpenVR 
 
 ## Current Status
 
-* Qt GUI fully functional
-* VTK render window integrated into UI
-* STL files can be loaded via File/Open or toolbar
-* STL folders can be loaded recursively
-* Multiple STL files can be displayed simultaneously
-* Tree view reflects loaded model hierarchy
-* Rename functionality implemented
-* Right-click context menu (properties editing)
-* Colour changes applied to models in GUI
-* Visibility toggle implemented recursively
+### GUI / Core Features
 
-* **Filters implemented in GUI:**
+- Qt GUI fully functional
+- VTK render window integrated into UI
+- STL files can be loaded via File/Open or toolbar
+- STL folders can be loaded recursively
+- Multiple STL files can be displayed simultaneously
+- Tree view reflects loaded model hierarchy
+- STL part names display correctly in the tree view
+- Rename functionality implemented
+- Right-click context menu for model property editing
+- Colour changes applied to models in GUI
+- Visibility toggle implemented recursively
+- Clear selection and reset view controls included
 
-  * Shrink filter with adjustable factor
-  * Clip filter with axis selection, percentage-based clipping and invert option
-  * Filters apply recursively across model hierarchy
+### Filters
 
-* **VR integration working:**
+- Shrink filter with adjustable factor
+- Clip filter with axis selection, percentage-based clipping and invert option
+- Filters apply recursively across the model hierarchy
+- Filters work in both GUI and VR
+- Live filter updates in VR implemented
 
-  * Start VR from GUI button
-  * Loaded STL models render in VR
-  * Multiple parts supported in VR
-  * Model scaling and positioning corrected
-  * Colour changes carry into VR
-  * Controller tracking working
+### VR Integration
 
-* **Filters in VR:**
+- VR starts from GUI button
+- VR can be stopped and restarted safely from GUI
+- Loaded STL models render correctly in VR
+- Multiple parts supported in VR
+- Model scaling and positioning corrected
+- Colour changes update live in VR
+- Visibility changes update live in VR, including recursively
+- Shrink and clip filters update live in VR
+- Controller tracking working
 
-  * Shrink filter supported
-  * Clip filter supported
-  * Filters applied when VR starts
+### VR Environment
 
-* **VR environment improvements:**
-
-  * Floor scenery implemented for spatial reference
+- Floor scenery implemented for spatial reference
+- Improved VR lighting added
+- Simple environment sphere added to improve immersion
 
 ---
-
 ## Build Notes
 
 This project uses:
