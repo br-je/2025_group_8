@@ -129,10 +129,9 @@ Expected behaviour:
 
 ## Next Tasks
 
-* Improve VR lighting
-* Add enhanced environment such as skybox or dome
-* Implement live updates in VR
 * Improve GUI controls for model interaction
+* Add animation
+* Add ability to move STL parts with controller
 * Package application into installer
 * Prepare final demo
 
