@@ -74,7 +74,39 @@ The documentation includes class and file descriptions for the major components 
 
 ---
 
+## Installer / Release
+
+A standalone Windows installer is provided through the GitHub Releases page.
+
+Download the latest installer from:
+
+https://github.com/br-je/2025_group_8/releases
+
+The installer includes the runtime files required to run the application, including:
+
+- Qt runtime DLLs and plugins
+- VTK runtime DLLs
+- OpenVR runtime DLL
+- VR bindings
+- The `Group8_CAD_VR.exe` application
+
+This means the installed application should run without requiring Qt, VTK, or OpenVR to be added to the system PATH.
+
+### Installing
+
+1. Download the latest installer from the Releases page.
+2. Run the installer.
+3. Launch **Group8 CAD VR** from the installed location or Start Menu shortcut.
+4. Launch SteamVR before starting VR mode in the application.
+
+### Notes
+
+- SteamVR must still be installed and running for VR mode.
+- The installer is intended for running the application, not for building or modifying the source code.
+- Developers who want to build the project from source still need local installations of Qt, VTK, OpenVR, CMake, and Visual Studio.
+
 ## Build Notes
+These build notes are only required if building the project from source. Users who only want to run the application should use the installer from the Releases page.
 
 This project uses:
 
