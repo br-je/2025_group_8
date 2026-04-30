@@ -64,6 +64,18 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Attach model to tree view
     ui->treeView->setModel(this->partList);
+    #include <QHeaderView>
+
+    ui->treeView->header()->setStretchLastSection(false);
+
+    // Make "Part" column expand to fill space
+    ui->treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+
+    // Make "Visible?" column only as wide as needed
+    ui->treeView->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+
+    // Slightly reduce indentation so names don't get pushed too far right
+    ui->treeView->setIndentation(12);
 
     //Create top-level folder node
     QModelIndex rootIndex;
