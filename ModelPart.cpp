@@ -259,6 +259,7 @@ void ModelPart::setShrinkFilter(bool enabled, double factor)
     shrinkFilterFactor = factor;
 
     updatePipeline();
+    updateVRPipeline();
 }
 
 bool ModelPart::shrinkFilterEnabled() const
@@ -280,6 +281,7 @@ void ModelPart::setClipFilter(bool enabled, int axis, double value, bool invert)
     invertClipFilter = invert;
 
     updatePipeline();
+    updateVRPipeline();
 }
 
 bool ModelPart::clipFilterEnabled() const
@@ -345,6 +347,119 @@ vtkSmartPointer<vtkActor> ModelPart::getActor() {
      */
 
     return actor;
+}
+
+
+void ModelPart::updateVRPipeline()
+{
+    if (!file || !vrMapper)
+    {
+        return;
+    }
+
+    file->Update();
+
+    vtkSmartPointer<vtkDataSet> currentData =
+        vtkDataSet::SafeDownCast(file->GetOutput());
+
+    if (!currentData)
+    {
+        return;
+    }
+
+    // Apply shrink filter to VR pipeline if enabled.
+    if (applyShrinkFilter)
+    {
+        vtkSmartPointer<vtkShrinkFilter> newShrinkFilter =
+            vtkSmartPointer<vtkShrinkFilter>::New();
+
+        newShrinkFilter->SetInputData(currentData);
+        newShrinkFilter->SetShrinkFactor(shrinkFilterFactor);
+        newShrinkFilter->Update();
+
+        currentData = vtkDataSet::SafeDownCast(
+            newShrinkFilter->GetOutputDataObject(0)
+        );
+
+        if (!currentData)
+        {
+            return;
+        }
+    }
+
+    // Apply clip filter to VR pipeline if enabled.
+    if (applyClipFilter)
+    {
+        int safeAxis = clipFilterAxis;
+
+        if (safeAxis < 0 || safeAxis > 2)
+        {
+            safeAxis = 0;
+        }
+
+        vtkSmartPointer<vtkPlane> newClipPlane =
+            vtkSmartPointer<vtkPlane>::New();
+
+        if (safeAxis == 0)
+        {
+            newClipPlane->SetNormal(1.0, 0.0, 0.0);
+        }
+        else if (safeAxis == 1)
+        {
+            newClipPlane->SetNormal(0.0, 1.0, 0.0);
+        }
+        else
+        {
+            newClipPlane->SetNormal(0.0, 0.0, 1.0);
+        }
+
+        double bounds[6];
+        currentData->GetBounds(bounds);
+
+        double minBound = bounds[safeAxis * 2];
+        double maxBound = bounds[safeAxis * 2 + 1];
+
+        double clipFraction = clipFilterValue / 100.0;
+        double clipPosition = minBound + clipFraction * (maxBound - minBound);
+
+        double origin[3] = {
+            (bounds[0] + bounds[1]) / 2.0,
+            (bounds[2] + bounds[3]) / 2.0,
+            (bounds[4] + bounds[5]) / 2.0
+        };
+
+        origin[safeAxis] = clipPosition;
+        newClipPlane->SetOrigin(origin);
+
+        vtkSmartPointer<vtkClipDataSet> newClipFilter =
+            vtkSmartPointer<vtkClipDataSet>::New();
+
+        newClipFilter->SetInputData(currentData);
+        newClipFilter->SetClipFunction(newClipPlane);
+        newClipFilter->SetInsideOut(invertClipFilter);
+        newClipFilter->Update();
+
+        currentData = vtkDataSet::SafeDownCast(
+            newClipFilter->GetOutputDataObject(0)
+        );
+
+        if (!currentData)
+        {
+            return;
+        }
+    }
+
+    // Keep the filtered data alive while VR is running.
+    vrFilteredData = currentData;
+
+    // Update the existing VR mapper instead of creating a new actor.
+    vrMapper->SetInputData(vrFilteredData);
+    vrMapper->Modified();
+
+    if (vrActor)
+    {
+        vrActor->Modified();
+    }
 }
 
 vtkSmartPointer<vtkActor> ModelPart::getNewActor()

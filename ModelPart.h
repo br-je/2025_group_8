@@ -140,6 +140,7 @@ public:
     bool shrinkFilterEnabled() const;
     double shrinkFactor() const;
     void updatePipeline();
+    void updateVRPipeline();
 
 	// Clip filter for VR rendering
     void setClipFilter(bool enabled, int axis, double value, bool invert);
@@ -184,6 +185,7 @@ private:
     vtkSmartPointer<vtkPlane> clipPlane;
     vtkSmartPointer<vtkDataSetMapper> vrMapper;
     vtkSmartPointer<vtkDataSet> vrFilteredData;
+
 };  
 
 
