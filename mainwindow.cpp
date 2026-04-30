@@ -380,7 +380,7 @@ int MainWindow::addVRActorsFromTree(const QModelIndex& index, VRRenderThread* th
     {
         ModelPart* part = static_cast<ModelPart*>(index.internalPointer());
 
-        if (part && part->visible())
+        if (part)
         {
             vtkSmartPointer<vtkActor> vrActor = part->getNewActor();
 

@@ -145,15 +145,23 @@ unsigned char ModelPart::getColourB() {
 }
 
 //Was placeholder, changed to work with vr rendering.
-void ModelPart::setVisible(bool visibleState) {
+void ModelPart::setVisible(bool visibleState)
+{
     isVisible = visibleState;
 
+    // Update GUI actor visibility.
     if (actor)
     {
         actor->SetVisibility(visibleState);
-		// Ensure the actor's colour is updated to reflect visibility change
-        actor->GetProperty()->SetColor(colourR / 255.0, colourG / 255.0, colourB / 255.0);
-        actor->SetVisibility(isVisible);
+        actor->Modified();
+    }
+
+    // Update VR actor visibility if VR is currently running.
+    // The VR actor is separate from the GUI actor, so visibility must be copied manually.
+    if (vrActor)
+    {
+        vrActor->SetVisibility(visibleState);
+        vrActor->Modified();
     }
 }
 
@@ -446,7 +454,11 @@ vtkSmartPointer<vtkActor> ModelPart::getNewActor()
     // This means colour changes made in the GUI are copied into VR.
     newActor->SetProperty(actor->GetProperty());
 
-    newActor->SetVisibility(actor->GetVisibility());
+    // Copy current visibility state.
+    newActor->SetVisibility(isVisible);
+
+    // Store VR actor so later visibility changes can be applied live.
+    vrActor = newActor;
 
     return newActor;
 }

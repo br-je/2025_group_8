@@ -167,6 +167,7 @@ private:
     vtkSmartPointer<vtkSTLReader>               file;               /**< Datafile from which part loaded */
     vtkSmartPointer<vtkMapper>                  mapper;             /**< Mapper for rendering */
     vtkSmartPointer<vtkActor>                   actor;              /**< Actor for rendering */
+    vtkSmartPointer<vtkActor>                   vrActor;            /**< Separate actor used for VR rendering */
     vtkColor3<unsigned char>                    colour;             /**< User defineable colour */
 
 	// Shrink filter for VR rendering
