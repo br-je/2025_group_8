@@ -112,6 +112,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->StartVRButton, &QPushButton::released,
         this, &MainWindow::startVR);
+
+    connect(ui->StopVRButton, &QPushButton::released,
+        this, &MainWindow::stopVR);
 }
 
 MainWindow::~MainWindow()
@@ -443,6 +446,18 @@ void MainWindow::startVR()
         });
 
     vrThread->start();
+}
+
+void MainWindow::stopVR()
+{
+    if (!vrThread || !vrThread->isRunning())
+    {
+        emit statusUpdateMessage("VR is not currently running", 3000);
+        return;
+    }
+
+    emit statusUpdateMessage("Stopping VR...", 3000);
+    vrThread->stopVR();
 }
 
 // Recursively loads STL files from the specified directory and adds them to the model tree under the given parent index.

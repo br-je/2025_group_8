@@ -38,9 +38,19 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="StopVRButton">
+        <property name="text">
+         <string>Stop VR</string>
+        </property>
+        <property name="icon">
+         <iconset theme="QIcon::ThemeIcon::MediaPlaybackStop"/>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="ClearSelectionButton">
         <property name="text">
-         <string>Clear</string>
+         <string>Clear Selection</string>
         </property>
        </widget>
       </item>

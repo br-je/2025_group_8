@@ -11,6 +11,8 @@
 #include <vtkNamedColors.h>
 #include <vtkNew.h>
 #include <vtkLight.h>
+#include <vtkCallbackCommand.h>
+#include <vtkCommand.h>
 
 #include <array>
 
@@ -46,6 +48,14 @@ void VRRenderThread::addActorOffline(vtkSmartPointer<vtkActor> actor)
     }
 }
 
+//This function signals the VR render thread to stop and performs necessary cleanup of VR resources.
+void VRRenderThread::stopVR()
+{
+    // Do not directly call OpenVR/VTK cleanup from the GUI thread.
+    // The VR thread will detect this flag and terminate itself safely.
+    stopRequested = true;
+}
+
 /**
 This function initialises the OpenVR renderer, adds all pre-prepared actors, and continuously updates the VR scene until stopped.
  Key steps:
@@ -59,6 +69,9 @@ This function initialises the OpenVR renderer, adds all pre-prepared actors, and
 */
 void VRRenderThread::run()
 {
+
+    stopRequested = false;
+
     vtkNew<vtkNamedColors> colors;
 
     std::array<unsigned char, 4> bkg{ {26, 51, 102, 255} };
@@ -195,18 +208,46 @@ void VRRenderThread::run()
     vtkNew<vtkOpenVRCamera> cam;
     renderer->SetActiveCamera(cam);
 
-	// Create the VR render window and interactor, and start the rendering loop
-    vtkNew<vtkOpenVRRenderWindow> renderWindow;
-    renderWindow->Initialize();
-    renderWindow->AddRenderer(renderer);
-    renderWindow->SetWindowName("Group8 CAD VR");
-    
-	// The interactor will handle user input and allow for real-time interaction with the VR scene
-    vtkNew<vtkOpenVRRenderWindowInteractor> renderWindowInteractor;
-    renderWindowInteractor->SetRenderWindow(renderWindow);
-    renderWindowInteractor->Initialize();
+    // Create the VR render window and interactor, and start the rendering loop
+    vrRenderWindow = vtkSmartPointer<vtkOpenVRRenderWindow>::New();
+    vrRenderWindow->Initialize();
+    vrRenderWindow->AddRenderer(renderer);
+    vrRenderWindow->SetWindowName("Group8 CAD VR");
 
-	// Start the VR rendering loop. This will keep the VR scene responsive and allow for user interaction until the interactor is stopped.
-    renderWindow->Render();
-    renderWindowInteractor->Start();
+    vrInteractor = vtkSmartPointer<vtkOpenVRRenderWindowInteractor>::New();
+    vrInteractor->SetRenderWindow(vrRenderWindow);
+    vrInteractor->Initialize();
+
+    // Run our own VR loop instead of using vrInteractor->Start().
+    // This allows the Stop VR button to end the loop safely.
+    while (!stopRequested)
+    {
+        if (vrInteractor)
+        {
+            vrInteractor->ProcessEvents();
+        }
+
+        if (vrRenderWindow)
+        {
+            vrRenderWindow->Render();
+        }
+
+        // Avoid maxing out the CPU.
+        QThread::msleep(10);
+    }
+
+    // Cleanup after the VR loop exits.
+    if (vrInteractor)
+    {
+        vrInteractor->TerminateApp();
+    }
+
+    if (vrRenderWindow)
+    {
+        vrRenderWindow->Finalize();
+    }
+
+    vrInteractor = nullptr;
+    vrRenderWindow = nullptr;
+
 }

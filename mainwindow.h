@@ -38,6 +38,7 @@ private slots:
     void removeSelectedItem();
     void on_actionOpen_File_triggered();
     void startVR();
+    void stopVR();
     void on_actionOpen_Folder_triggered();
 
 public slots:
