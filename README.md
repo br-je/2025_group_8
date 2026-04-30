@@ -200,9 +200,9 @@ Optional future assets, such as a textured skybox or panorama image, could be st
 ## Next Tasks
 
 - Continue Doxygen documentation polish
-- Package application into an installer
 - Prepare final demo workflow
 - Test final build on the VR lab machine
+- Optional: improve GUI layout and visual polish
 - Optional: add textured skybox or enhanced VR scenery
 - Optional: investigate controller-based part movement
 
