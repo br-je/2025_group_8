@@ -114,7 +114,9 @@ MainWindow::MainWindow(QWidget *parent)
             ui->statusbar, &QStatusBar::showMessage);
 
     connect(ui->pushButton, &QPushButton::released,
-            this, &MainWindow::handleButton1);
+        this, &MainWindow::toggleVRAnimation);
+
+    ui->pushButton->setText("Start Animation");
 
     connect(ui->ClearSelectionButton, &QPushButton::released,
             this, &MainWindow::handleClearSelection);
@@ -223,6 +225,23 @@ void MainWindow::on_actionOpen_Folder_triggered()
     emit statusUpdateMessage(
         "Loaded folder: " + dirInfo.fileName() +
         " (" + QString::number(fileCount) + " STL files)",
+        3000
+    );
+}
+
+void MainWindow::toggleVRAnimation()
+{
+    vrAnimationEnabled = !vrAnimationEnabled;
+
+    if (vrThread && vrThread->isRunning())
+    {
+        vrThread->setAnimationEnabled(vrAnimationEnabled);
+    }
+
+    ui->pushButton->setText(vrAnimationEnabled ? "Stop Animation" : "Start Animation");
+
+    emit statusUpdateMessage(
+        vrAnimationEnabled ? "VR animation enabled" : "VR animation disabled",
         3000
     );
 }
@@ -456,6 +475,8 @@ void MainWindow::startVR()
     connect(vrThread, &QThread::finished, this, [this]() {
         vrThread = nullptr;
         });
+
+    vrThread->setAnimationEnabled(vrAnimationEnabled);
 
     vrThread->start();
 }

@@ -40,6 +40,7 @@ private slots:
     void startVR();
     void stopVR();
     void on_actionOpen_Folder_triggered();
+    void toggleVRAnimation();
 
 public slots:
     void handleClearSelection();
@@ -56,5 +57,6 @@ private:
     int addVRActorsFromTree(const QModelIndex& index, VRRenderThread* thread);
     int loadSTLFilesFromDirectory(const QString& dirPath, QModelIndex parentIndex, bool recursive);
     void applyPropertiesToChildren(ModelPart* parentPart);
+    bool vrAnimationEnabled = false;
 };
 #endif // MAINWINDOW_H

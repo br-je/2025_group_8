@@ -64,7 +64,7 @@
       <item>
        <widget class="QPushButton" name="pushButton">
         <property name="text">
-         <string>PushButton</string>
+         <string>Start Animation (VR)</string>
         </property>
        </widget>
       </item>

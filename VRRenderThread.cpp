@@ -48,6 +48,16 @@ void VRRenderThread::addActorOffline(vtkSmartPointer<vtkActor> actor)
     }
 }
 
+//Animation functions
+void VRRenderThread::setAnimationEnabled(bool enabled)
+{
+    animationEnabled = enabled;
+}
+bool VRRenderThread::animationIsEnabled() const
+{
+    return animationEnabled;
+}
+
 //This function signals the VR render thread to stop and performs necessary cleanup of VR resources.
 void VRRenderThread::stopVR()
 {
@@ -255,12 +265,25 @@ void VRRenderThread::run()
             vrInteractor->ProcessEvents();
         }
 
+        // Simple turntable animation for the loaded CAD model.
+        // Only actors in the actors list are animated, so the floor and sky sphere stay still.
+        if (animationEnabled)
+        {
+            for (auto actor : actors)
+            {
+                if (actor)
+                {
+                    actor->RotateY(0.6);
+                    actor->Modified();
+                }
+            }
+        }
+
         if (vrRenderWindow)
         {
             vrRenderWindow->Render();
         }
 
-        // Avoid maxing out the CPU.
         QThread::msleep(10);
     }
 
