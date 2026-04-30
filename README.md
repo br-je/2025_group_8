@@ -11,7 +11,7 @@
 
 # Group 8 – Qt / VTK CAD Viewer with VR
 
-This repository contains a Qt-based CAD viewer with VTK rendering and an OpenVR integration for immersive model viewing.
+This repository contains a Qt-based CAD viewer with VTK rendering and OpenVR integration for immersive CAD model viewing.
 
 ---
 
@@ -19,8 +19,7 @@ This repository contains a Qt-based CAD viewer with VTK rendering and an OpenVR 
 
 Doxygen documentation is generated automatically using GitHub Actions.
 
-Documentation website:
-https://br-je.github.io/2025_group_8/index.html
+Documentation website: https://br-je.github.io/2025_group_8/index.html
 
 The documentation includes class and file descriptions for the major components of the project.
 
@@ -41,6 +40,7 @@ The documentation includes class and file descriptions for the major components 
 - Right-click context menu for model property editing
 - Colour changes applied to models in GUI
 - Visibility toggle implemented recursively
+- Selected items can be removed from the model tree
 - Clear selection and reset view controls included
 
 ### Filters
@@ -61,6 +61,9 @@ The documentation includes class and file descriptions for the major components 
 - Colour changes update live in VR
 - Visibility changes update live in VR, including recursively
 - Shrink and clip filters update live in VR
+- STL models can be added to the VR scene while VR is running
+- Reset view control works for GUI and VR model view
+- Start/stop animation control implemented
 - Controller tracking working
 
 ### VR Environment
@@ -70,15 +73,17 @@ The documentation includes class and file descriptions for the major components 
 - Simple environment sphere added to improve immersion
 
 ---
+
 ## Build Notes
 
 This project uses:
 
-* Qt 6.10.2 (MSVC 2022 64-bit)
-* VTK 9.6
-* OpenVR
-* CMake
-* Visual Studio (x64 Release recommended)
+- Qt 6.10.2 MSVC 2022 64-bit
+- VTK 9.6
+- OpenVR
+- CMake
+- Visual Studio
+- x64 Release configuration recommended
 
 ---
 
@@ -88,28 +93,27 @@ This project requires local installation of Qt, VTK, and OpenVR.
 
 Update the paths in `CMakeLists.txt` to match your system:
 
-```cmake
-set(OpenVR_DIR "C:/OpenVR")
-set(OpenVR_INCLUDE_DIR "C:/OpenVR/headers")
-set(OpenVR_LIBRARY "C:/OpenVR/lib/win64/openvr_api.lib")
+    set(OpenVR_DIR "C:/OpenVR")
+    set(OpenVR_INCLUDE_DIR "C:/OpenVR/headers")
+    set(OpenVR_LIBRARY "C:/OpenVR/lib/win64/openvr_api.lib")
 
-set(VTK_DIR "C:/VTK9.6_MSVC2026/build")
+    set(VTK_DIR "C:/VTK9.6_MSVC2026/build")
 
-# Only required if Qt is not detected automatically:
-set(CMAKE_PREFIX_PATH "C:/Qt/Qt6.10.2/6.10.2/msvc2022_64")
-```
-
+    # Only required if Qt is not detected automatically:
+    set(CMAKE_PREFIX_PATH "C:/Qt/Qt6.10.2/6.10.2/msvc2022_64")
+   
 ### Build Steps
 
-1. Open the project in Visual Studio
-2. Ensure configuration is set to:
+1. Open the project in Visual Studio.
+2. Configure the project with CMake.
+3. Ensure the configuration is set to:
 
-   ```text
-   x64-Release
-   ```
+       x64-Release
 
-3. Build the project
-4. Run the executable
+4. Build the project.
+5. Run the executable.
+
+---
 
 ## VR Usage
 
@@ -120,43 +124,53 @@ set(CMAKE_PREFIX_PATH "C:/Qt/Qt6.10.2/6.10.2/msvc2022_64")
 5. Click **Start VR**.
 6. Use the GUI to edit colour, visibility, shrink filter, or clip filter.
 7. Changes should update live in VR.
-8. Click **Stop VR** to safely stop the VR session.
+8. Additional STL models can be loaded while VR is already running.
+9. Use **Start Animation** / **Stop Animation** to rotate the loaded model in VR.
+10. Use **Reset View** to reset the GUI and VR model view.
+11. Click **Stop VR** to safely stop the VR session.
 
 ### Expected Behaviour
 
 - If no STL is loaded, a test cylinder appears.
 - If STL models are loaded, the CAD assembly appears in VR.
 - Colour, visibility, shrink, and clip filter changes update live in VR.
+- New STL files can be added to the VR scene while VR is running.
+- The model animation can be started and stopped from the GUI.
+- The view can be reset from the GUI.
 - VR can be stopped and restarted without restarting the application.
 
 ---
 
 ## Key Files
 
-- `MainWindow` – Handles the Qt GUI, STL loading, tree view, context menu, and VR controls.
-- `ModelPart` – Stores CAD part data, actor properties, filters, and VR actor links.
+- `MainWindow` – Handles the Qt GUI, STL loading, tree view, context menu, model removal, reset view, animation controls, and VR controls.
+- `ModelPart` – Stores CAD part data, actor properties, filters, visibility state, and VR actor links.
 - `ModelPartList` – Provides the tree model structure for loaded CAD parts.
-- `VRRenderThread` – Manages the OpenVR render thread, VR actors, environment, lighting, and VR loop.
-- `PartPropertiesDialog` – Allows editing of part name, colour, visibility, and filters.
+- `VRRenderThread` – Manages the OpenVR render thread, VR actors, live VR updates, environment, lighting, animation, and VR loop.
+- `PartPropertiesDialog` – Allows editing of part name, colour, visibility, filters, and item removal.
 
 ---
 
 ## Assets
 
-*THIS NEEDS TO BE ADDED THIS IS A PLACEHOLDER
-* Skybox assets stored in `Assets/Skybox`
-* Intended for VR environment enhancement
-* Ensure `Assets` folder is present alongside executable when running
+No external skybox assets are currently required.
+
+The current VR environment is generated in code using:
+
+- A floor plane for spatial reference
+- Improved scene lighting
+- A simple environment sphere around the VR scene
+
+Optional future assets, such as a textured skybox or panorama image, could be stored in an `Assets/Skybox` folder.
 
 ---
 
 ## Next Tasks
 
-- Add simple animation for VR demonstration
-- Improve reset view behaviour
 - Continue Doxygen documentation polish
 - Package application into an installer
 - Prepare final demo workflow
+- Test final build on the VR lab machine
 - Optional: add textured skybox or enhanced VR scenery
 - Optional: investigate controller-based part movement
 
@@ -168,5 +182,4 @@ set(CMAKE_PREFIX_PATH "C:/Qt/Qt6.10.2/6.10.2/msvc2022_64")
 - Use Git branches for major features.
 - Ensure builds work in Release mode before committing.
 - Avoid committing build folders, binaries, or large dependency folders.
-
-- ---
+- Commit IDs and final installer releases should be clearly recorded for submission.
