@@ -19,19 +19,16 @@
 //These includes have been used to scale the objects in the scene
 #include <algorithm>
 #include <limits>
+#include <cmath>
 
 //For skybox and floor aesthetics
 #include <vtkPlaneSource.h>
 #include <vtkPolyDataMapper.h>
-#include <vtkPNGReader.h>
 #include <vtkTexture.h>
 #include <vtkSphereSource.h>
 #include <vtkPolyData.h>
 #include <vtkPoints.h>
 #include <vtkCellArray.h>
-#include <QCoreApplication>
-#include <QDir>
-#include <QFileInfo>
 
 //Live updating VR method https://doc.qt.io/qt-6/qmutexlocker.html (Experimental, but prevents crashing currently)
 #include <QMutexLocker>
