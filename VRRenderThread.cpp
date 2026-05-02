@@ -68,6 +68,16 @@ void VRRenderThread::toggleExplode()
     explodeToggleRequested = true;
 }
 
+void VRRenderThread::undoDrag()
+{
+    undoRequested = true;
+}
+
+void VRRenderThread::redoDrag()
+{
+    redoRequested = true;
+}
+
 void VRRenderThread::queueVRPipelineUpdate(ModelPart* part)
 {
     if (!part)
@@ -172,14 +182,40 @@ void VRRenderThread::OnButton3D(vtkObject* /*caller*/, unsigned long /*eventId*/
             self->hoveredActor = nullptr;
         }
 
-        self->draggedActor    = closest;
-        self->grabbingDevice  = bd->GetDevice();
+        self->draggedActor   = closest;
+        self->grabbingDevice = bd->GetDevice();
         self->lastControllerPos[0] = pos[0];
         self->lastControllerPos[1] = pos[1];
         self->lastControllerPos[2] = pos[2];
+
+        // Record where the actor was before the drag so we can undo it.
+        if (closest)
+        {
+            double* p = closest->GetPosition();
+            self->dragStartPosition = { p[0], p[1], p[2] };
+        }
     }
     else if (bd->GetAction() == vtkEventDataAction::Release)
     {
+        // If the actor actually moved, push the move onto the undo stack.
+        if (self->draggedActor)
+        {
+            double* p = self->draggedActor->GetPosition();
+            std::array<double, 3> endPos = { p[0], p[1], p[2] };
+
+            if (endPos != self->dragStartPosition)
+            {
+                // Cap history at 20 moves to avoid unbounded memory growth.
+                if (self->undoStack.size() >= 20)
+                    self->undoStack.removeFirst();
+
+                self->undoStack.append({ self->draggedActor,
+                                         self->dragStartPosition,
+                                         endPos });
+                self->redoStack.clear();
+            }
+        }
+
         self->draggedActor   = nullptr;
         self->grabbingDevice = vtkEventDataDevice::Unknown;
     }
@@ -685,6 +721,29 @@ void VRRenderThread::run()
             }
         }
 
+        // Undo/redo last drag move.
+        if (undoRequested.exchange(false) && !undoStack.isEmpty())
+        {
+            PartMove move = undoStack.takeLast();
+            if (move.actor)
+            {
+                move.actor->SetPosition(move.from[0], move.from[1], move.from[2]);
+                move.actor->Modified();
+            }
+            redoStack.append(move);
+        }
+
+        if (redoRequested.exchange(false) && !redoStack.isEmpty())
+        {
+            PartMove move = redoStack.takeLast();
+            if (move.actor)
+            {
+                move.actor->SetPosition(move.to[0], move.to[1], move.to[2]);
+                move.actor->Modified();
+            }
+            undoStack.append(move);
+        }
+
         // Explode toggle — flip direction when requested.
         if (explodeToggleRequested.exchange(false))
         {
@@ -722,6 +781,8 @@ void VRRenderThread::run()
             animationEnabled = false;
             explodeActive    = false;
             explodeProgress  = 0.0;
+            undoStack.clear();
+            redoStack.clear();
 
             int count = std::min(
                 actors.size(),

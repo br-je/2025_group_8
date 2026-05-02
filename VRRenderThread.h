@@ -34,6 +34,8 @@ public:
     void stopVR();
     void resetView();
     void toggleExplode();
+    void undoDrag();
+    void redoDrag();
 
 	//Animation control
     void setAnimationEnabled(bool enabled);
@@ -55,6 +57,19 @@ private:
     std::atomic<bool> resetRequested{ false };
     std::atomic<bool> animationEnabled{ false };
     std::atomic<bool> explodeToggleRequested{ false };
+    std::atomic<bool> undoRequested{ false };
+    std::atomic<bool> redoRequested{ false };
+
+    // Undo/redo history for part dragging
+    struct PartMove
+    {
+        vtkSmartPointer<vtkActor> actor;
+        std::array<double, 3> from;
+        std::array<double, 3> to;
+    };
+    QList<PartMove> undoStack;
+    QList<PartMove> redoStack;
+    std::array<double, 3> dragStartPosition = { 0.0, 0.0, 0.0 };
 
     QList<std::array<double, 3>> originalPositions;
     QList<std::array<double, 3>> originalScales;

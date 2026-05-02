@@ -135,6 +135,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->explodeButton, &QPushButton::released,
         this, &MainWindow::toggleExplode);
+
+    connect(ui->undoButton, &QPushButton::released,
+        this, &MainWindow::undoDrag);
+
+    connect(ui->redoButton, &QPushButton::released,
+        this, &MainWindow::redoDrag);
 }
 
 MainWindow::~MainWindow()
@@ -304,6 +310,28 @@ void MainWindow::resetModelView()
     }
 
     emit statusUpdateMessage("Model view reset", 3000);
+}
+
+void MainWindow::undoDrag()
+{
+    if (!vrThread || !vrThread->isRunning())
+    {
+        emit statusUpdateMessage("Start VR first to use undo", 3000);
+        return;
+    }
+    vrThread->undoDrag();
+    emit statusUpdateMessage("Undo last move", 2000);
+}
+
+void MainWindow::redoDrag()
+{
+    if (!vrThread || !vrThread->isRunning())
+    {
+        emit statusUpdateMessage("Start VR first to use redo", 3000);
+        return;
+    }
+    vrThread->redoDrag();
+    emit statusUpdateMessage("Redo last move", 2000);
 }
 
 void MainWindow::toggleExplode()
