@@ -67,6 +67,10 @@ private:
     double lastControllerPos[3] = { 0.0, 0.0, 0.0 };
     vtkEventDataDevice grabbingDevice = vtkEventDataDevice::Unknown;
 
+    // Hover highlight state — the actor currently glowing, and its original colour
+    vtkSmartPointer<vtkActor> hoveredActor;
+    double hoveredOriginalColor[3] = { 1.0, 1.0, 1.0 };
+
     // Static callbacks fired by the VR interactor on the VR thread
     static void OnButton3D(vtkObject* caller, unsigned long eventId, void* clientData, void* callData);
     static void OnMove3D(vtkObject* caller, unsigned long eventId, void* clientData, void* callData);

@@ -150,6 +150,18 @@ void VRRenderThread::OnButton3D(vtkObject* /*caller*/, unsigned long /*eventId*/
             }
         }
 
+        // If this actor was hovered (highlighted), restore its colour before grabbing.
+        if (closest && self->hoveredActor == closest)
+        {
+            closest->GetProperty()->SetColor(
+                self->hoveredOriginalColor[0],
+                self->hoveredOriginalColor[1],
+                self->hoveredOriginalColor[2]
+            );
+            closest->Modified();
+            self->hoveredActor = nullptr;
+        }
+
         self->draggedActor    = closest;
         self->grabbingDevice  = bd->GetDevice();
         self->lastControllerPos[0] = pos[0];
@@ -164,37 +176,89 @@ void VRRenderThread::OnButton3D(vtkObject* /*caller*/, unsigned long /*eventId*/
 }
 
 // Fires every time a tracked controller moves.
-// If a grab is active and this is the grabbing controller, move the actor by the same delta.
+// Handles both actor dragging and hover highlighting.
 void VRRenderThread::OnMove3D(vtkObject* /*caller*/, unsigned long /*eventId*/,
                                void* clientData, void* callData)
 {
     auto* self = static_cast<VRRenderThread*>(clientData);
-    if (!self->draggedActor)
-        return;
 
     auto* ed = static_cast<vtkEventData*>(callData);
     auto* md = ed->GetAsEventDataDevice3D();
     if (!md)
         return;
 
-    // Ignore movement from the other controller.
-    if (md->GetDevice() != self->grabbingDevice)
-        return;
-
     double pos[3];
     md->GetWorldPosition(pos);
 
-    double* cur = self->draggedActor->GetPosition();
-    self->draggedActor->SetPosition(
-        cur[0] + pos[0] - self->lastControllerPos[0],
-        cur[1] + pos[1] - self->lastControllerPos[1],
-        cur[2] + pos[2] - self->lastControllerPos[2]
-    );
-    self->draggedActor->Modified();
+    // --- Dragging ---
+    if (self->draggedActor && md->GetDevice() == self->grabbingDevice)
+    {
+        double* cur = self->draggedActor->GetPosition();
+        self->draggedActor->SetPosition(
+            cur[0] + pos[0] - self->lastControllerPos[0],
+            cur[1] + pos[1] - self->lastControllerPos[1],
+            cur[2] + pos[2] - self->lastControllerPos[2]
+        );
+        self->draggedActor->Modified();
 
-    self->lastControllerPos[0] = pos[0];
-    self->lastControllerPos[1] = pos[1];
-    self->lastControllerPos[2] = pos[2];
+        self->lastControllerPos[0] = pos[0];
+        self->lastControllerPos[1] = pos[1];
+        self->lastControllerPos[2] = pos[2];
+        return;
+    }
+
+    // --- Hover highlight (only when nothing is grabbed) ---
+    const double grabRadiusSq = 0.25 * 0.25;
+    vtkSmartPointer<vtkActor> nearest;
+    double minDistSq = grabRadiusSq;
+
+    for (auto& actor : self->actors)
+    {
+        if (!actor)
+            continue;
+
+        double bounds[6];
+        actor->GetBounds(bounds);
+
+        double cx = (bounds[0] + bounds[1]) * 0.5;
+        double cy = (bounds[2] + bounds[3]) * 0.5;
+        double cz = (bounds[4] + bounds[5]) * 0.5;
+
+        double dx = pos[0] - cx;
+        double dy = pos[1] - cy;
+        double dz = pos[2] - cz;
+        double distSq = dx*dx + dy*dy + dz*dz;
+
+        if (distSq < minDistSq)
+        {
+            minDistSq = distSq;
+            nearest   = actor;
+        }
+    }
+
+    // If the hovered actor has changed, restore the old one and highlight the new one.
+    if (nearest != self->hoveredActor)
+    {
+        if (self->hoveredActor)
+        {
+            self->hoveredActor->GetProperty()->SetColor(
+                self->hoveredOriginalColor[0],
+                self->hoveredOriginalColor[1],
+                self->hoveredOriginalColor[2]
+            );
+            self->hoveredActor->Modified();
+        }
+
+        self->hoveredActor = nearest;
+
+        if (nearest)
+        {
+            // Save the part's real colour then apply a bright yellow highlight.
+            nearest->GetProperty()->GetColor(self->hoveredOriginalColor);
+            nearest->GetProperty()->SetColor(1.0, 1.0, 0.0);
+            nearest->Modified();
+        }
+    }
 }
 
 /**
