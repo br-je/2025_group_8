@@ -345,6 +345,9 @@ void MainWindow::openContextMenu(const QPoint &pos)
             ui->treeView->viewport()->update();
             updateRender();
 
+            // Push filter/property updates to the VR thread if VR is running.
+            queueVRUpdatesFromTree(index);
+
             emit statusUpdateMessage("Item properties updated", 3000);
         }
     }
@@ -562,6 +565,26 @@ void MainWindow::stopVR()
 
     emit statusUpdateMessage("Stopping VR...", 3000);
     vrThread->stopVR();
+}
+
+void MainWindow::queueVRUpdatesFromTree(const QModelIndex& index)
+{
+    if (!vrThread || !vrThread->isRunning())
+        return;
+
+    if (index.isValid())
+    {
+        ModelPart* part = static_cast<ModelPart*>(index.internalPointer());
+        if (part)
+            vrThread->queueVRPipelineUpdate(part);
+    }
+
+    int rows = partList->rowCount(index);
+    for (int i = 0; i < rows; i++)
+    {
+        QModelIndex childIndex = partList->index(i, 0, index);
+        queueVRUpdatesFromTree(childIndex);
+    }
 }
 
 // Recursively loads STL files from the specified directory and adds them to the model tree under the given parent index.

@@ -259,7 +259,8 @@ void ModelPart::setShrinkFilter(bool enabled, double factor)
     shrinkFilterFactor = factor;
 
     updatePipeline();
-    updateVRPipeline();
+    // VR pipeline update is deferred — MainWindow queues it via VRRenderThread so it
+    // runs on the VR thread, avoiding cross-thread VTK access.
 }
 
 bool ModelPart::shrinkFilterEnabled() const
@@ -281,7 +282,7 @@ void ModelPart::setClipFilter(bool enabled, int axis, double value, bool invert)
     invertClipFilter = invert;
 
     updatePipeline();
-    updateVRPipeline();
+    // VR pipeline update is deferred — see setShrinkFilter comment.
 }
 
 bool ModelPart::clipFilterEnabled() const

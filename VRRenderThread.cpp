@@ -66,6 +66,15 @@ void VRRenderThread::addActorOffline(vtkSmartPointer<vtkActor> actor)
     }
 }
 
+void VRRenderThread::queueVRPipelineUpdate(ModelPart* part)
+{
+    if (!part)
+        return;
+    QMutexLocker locker(&pendingVRUpdatesMutex);
+    if (!pendingVRUpdates.contains(part))
+        pendingVRUpdates.append(part);
+}
+
 //Animation functions
 void VRRenderThread::setAnimationEnabled(bool enabled)
 {
@@ -433,6 +442,22 @@ void VRRenderThread::run()
             originalOrientations.append({ orientation[0], orientation[1], orientation[2] });
 
             renderer->AddActor(actor);
+        }
+
+        // Apply filter/property updates queued by the GUI thread.
+        // Called here (inside VR thread) so VTK objects are only modified from one thread.
+        {
+            QList<ModelPart*> updatesToProcess;
+            {
+                QMutexLocker locker(&pendingVRUpdatesMutex);
+                updatesToProcess = pendingVRUpdates;
+                pendingVRUpdates.clear();
+            }
+            for (auto part : updatesToProcess)
+            {
+                if (part)
+                    part->updateVRPipeline();
+            }
         }
 
         // Reset model actors back to their original VR transforms.

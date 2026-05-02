@@ -60,5 +60,6 @@ private:
     void applyPropertiesToChildren(ModelPart* parentPart);
     bool vrAnimationEnabled = false;
     void addPartToLiveVR(ModelPart* part);
+    void queueVRUpdatesFromTree(const QModelIndex& index);
 };
 #endif // MAINWINDOW_H

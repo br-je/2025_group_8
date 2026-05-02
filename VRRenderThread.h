@@ -17,6 +17,8 @@
 //Experimental adding STL during live VR
 #include <QMutex>
 
+#include "ModelPart.h"
+
 
 class VRRenderThread : public QThread
 {
@@ -26,6 +28,7 @@ public:
     explicit VRRenderThread(QObject* parent = nullptr);
 
     void addActorOffline(vtkSmartPointer<vtkActor> actor);
+    void queueVRPipelineUpdate(ModelPart* part);
     void stopVR();
     void resetView();
 
@@ -41,6 +44,9 @@ private:
     QList<vtkSmartPointer<vtkActor>> actors;
     QList<vtkSmartPointer<vtkActor>> pendingActors;
     QMutex pendingActorsMutex;
+
+    QList<ModelPart*> pendingVRUpdates;
+    QMutex pendingVRUpdatesMutex;
 
     std::atomic<bool> stopRequested{ false };
     std::atomic<bool> resetRequested{ false };
