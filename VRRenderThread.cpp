@@ -21,7 +21,6 @@
 #include <limits>
 
 //For skybox and floor aesthetics
-#include <vtkPlaneSource.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkTexture.h>
 #include <vtkSkybox.h>
@@ -264,27 +263,8 @@ void VRRenderThread::run()
         originalOrientations.append({ orientation[0], orientation[1], orientation[2] });
     }
 
-    // Add a simple floor to make the VR environment more realistic.
-    // This helps avoid the scene appearing as just a plain background colour.
-	// Play around with the floor position and size to best fit the CAD assembly and improve depth perception in VR.
-    vtkNew<vtkPlaneSource> floorSource;
-
-    double floorY = 0.0;
-    floorSource->SetOrigin(-5.0, floorY, -8.0);
-    floorSource->SetPoint1(5.0, floorY, -8.0);
-    floorSource->SetPoint2(-5.0, floorY, 4.0);
-    floorSource->Update();
-
-    vtkNew<vtkPolyDataMapper> floorMapper;
-    floorMapper->SetInputConnection(floorSource->GetOutputPort());
-
-    vtkNew<vtkActor> floorActor;
-    floorActor->SetMapper(floorMapper);
-    floorActor->GetProperty()->SetColor(0.35, 0.35, 0.35);
-    floorActor->GetProperty()->SetOpacity(1.0);
-
-
-    renderer->AddActor(floorActor);
+    // No solid floor plane needed — the HDRI garage image provides the
+    // visual floor. A plain grey rectangle would block it.
 
     // Grid of lines sitting just above the floor under the car.
     // The car appears centred at X=0, Z=-2.0, so the grid is centred there.
@@ -330,8 +310,7 @@ void VRRenderThread::run()
 
         vtkNew<vtkActor> gridActor;
         gridActor->SetMapper(gridMapper);
-        gridActor->GetProperty()->SetColor(0.8, 0.8, 0.8);
-        gridActor->GetProperty()->SetLineWidth(1.0);
+        gridActor->VisibilityOff();
         gridActor->PickableOff();
 
         renderer->AddActor(gridActor);
