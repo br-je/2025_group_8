@@ -1,6 +1,7 @@
 #include "partpropertiesdialog.h"
 #include "ui_partpropertiesdialog.h"
 #include <QPushButton>
+#include <QColorDialog>
 
 bool PartPropertiesDialog::removalRequested() const
 {
@@ -21,11 +22,42 @@ PartPropertiesDialog::PartPropertiesDialog(QWidget* parent)
     , ui(new Ui::PartPropertiesDialog)
     , currentPart(nullptr)
     , removeItemRequested(false)
+    , selectedColor(Qt::white)
 {
     ui->setupUi(this);
 
     connect(ui->removeSelected, &QPushButton::clicked,
         this, &PartPropertiesDialog::requestRemove);
+
+    connect(ui->colorButton, &QPushButton::clicked,
+        this, &PartPropertiesDialog::onColorButtonClicked);
+}
+
+void PartPropertiesDialog::updateColorButton()
+{
+    // Set the button background to the chosen colour so the user can see it.
+    // Use black or white text depending on brightness so it stays readable.
+    int brightness = (selectedColor.red() * 299 +
+                      selectedColor.green() * 587 +
+                      selectedColor.blue() * 114) / 1000;
+    QString textColor = (brightness > 128) ? "black" : "white";
+
+    ui->colorButton->setStyleSheet(
+        QString("background-color: %1; color: %2;")
+            .arg(selectedColor.name())
+            .arg(textColor)
+    );
+    ui->colorButton->setText(selectedColor.name().toUpper());
+}
+
+void PartPropertiesDialog::onColorButtonClicked()
+{
+    QColor chosen = QColorDialog::getColor(selectedColor, this, "Choose Colour");
+    if (chosen.isValid())
+    {
+        selectedColor = chosen;
+        updateColorButton();
+    }
 }
 
 PartPropertiesDialog::~PartPropertiesDialog()
@@ -43,10 +75,11 @@ void PartPropertiesDialog::setModelPart(ModelPart *part)
     // Column 0 = name
     ui->nameLineEdit->setText(currentPart->data(0).toString());
 
-    // Colour
-    ui->redSpinBox->setValue(currentPart->getColourR());
-    ui->greenSpinBox->setValue(currentPart->getColourG());
-    ui->blueSpinBox->setValue(currentPart->getColourB());
+    // Colour — load the part's current RGB into the picker button
+    selectedColor = QColor(currentPart->getColourR(),
+                           currentPart->getColourG(),
+                           currentPart->getColourB());
+    updateColorButton();
 
     // Visibility
     ui->visibleCheckBox->setChecked(currentPart->visible());
@@ -71,10 +104,10 @@ void PartPropertiesDialog::accept()
 
         // Colour
         currentPart->setColour(
-            static_cast<unsigned char>(ui->redSpinBox->value()),
-            static_cast<unsigned char>(ui->greenSpinBox->value()),
-            static_cast<unsigned char>(ui->blueSpinBox->value())
-            );
+            static_cast<unsigned char>(selectedColor.red()),
+            static_cast<unsigned char>(selectedColor.green()),
+            static_cast<unsigned char>(selectedColor.blue())
+        );
 
         // Visibility
         currentPart->set(

@@ -2,6 +2,7 @@
 #define PARTPROPERTIESDIALOG_H
 
 #include <QDialog>
+#include <QColor>
 #include "ModelPart.h"
 
 namespace Ui {
@@ -24,11 +25,15 @@ protected:
 
 private slots:
     void requestRemove();
+    void onColorButtonClicked();
 
 private:
     Ui::PartPropertiesDialog *ui;
     ModelPart *currentPart;
     bool removeItemRequested;
+    QColor selectedColor;
+
+    void updateColorButton();
 };
 
 #endif // PARTPROPERTIESDIALOG_H
