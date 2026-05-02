@@ -103,3 +103,11 @@ add_custom_command(TARGET VRBindings PRE_BUILD
     ${CMAKE_SOURCE_DIR}/vrbindings
     ${CMAKE_BINARY_DIR}/vrbindings
 )
+
+add_custom_target(HDRISkybox ALL)
+
+add_custom_command(TARGET HDRISkybox PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/hdri_skybox
+    ${CMAKE_BINARY_DIR}/hdri_skybox
+)

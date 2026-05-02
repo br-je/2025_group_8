@@ -23,9 +23,9 @@
 //For skybox and floor aesthetics
 #include <vtkPlaneSource.h>
 #include <vtkPolyDataMapper.h>
-#include <vtkPNGReader.h>
 #include <vtkTexture.h>
-#include <vtkSphereSource.h>
+#include <vtkSkybox.h>
+#include <vtkHDRReader.h>
 #include <vtkPolyData.h>
 #include <vtkPoints.h>
 #include <vtkCellArray.h>
@@ -337,33 +337,29 @@ void VRRenderThread::run()
         renderer->AddActor(gridActor);
     }
 
-   // Add a simple environment sphere around the VR scene.
-   // This acts as a lightweight skybox/scenery without relying on image files.
-    vtkNew<vtkSphereSource> skySource;
-    skySource->SetRadius(25.0);
-    skySource->SetThetaResolution(64);
-    skySource->SetPhiResolution(32);
-    skySource->SetCenter(0.0, 0.0, -2.0);
-    skySource->Update();
+    // Load the HDRI garage environment as a proper skybox.
+    // The file is copied next to the executable by CMake at build time.
+    QString hdrPath = QCoreApplication::applicationDirPath() + "/hdri_skybox/garage_4k.hdr";
 
-    vtkNew<vtkPolyDataMapper> skyMapper;
-    skyMapper->SetInputConnection(skySource->GetOutputPort());
+    vtkNew<vtkHDRReader> hdrReader;
+    hdrReader->SetFileName(hdrPath.toStdString().c_str());
+    hdrReader->Update();
 
-    vtkNew<vtkActor> skyActor;
-    skyActor->SetMapper(skyMapper);
+    vtkNew<vtkTexture> skyTexture;
+    skyTexture->SetInputConnection(hdrReader->GetOutputPort());
+    skyTexture->MipmapOn();
+    skyTexture->InterpolateOn();
 
-    // Make it look like a distant dark-blue VR environment.
-    skyActor->GetProperty()->SetColor(0.04, 0.07, 0.14);
-    skyActor->GetProperty()->SetAmbient(1.0);
-    skyActor->GetProperty()->SetDiffuse(0.0);
-    skyActor->GetProperty()->SetSpecular(0.0);
+    vtkNew<vtkSkybox> skybox;
+    skybox->SetTexture(skyTexture);
+    skybox->SetProjection(vtkSkybox::Sphere);
+    renderer->AddActor(skybox);
 
-    // Prevent the sky from being selected/interacted with.
-    skyActor->PickableOff();
+    // Use the HDRI to light the scene as well as the background.
+    renderer->UseImageBasedLightingOn();
+    renderer->SetEnvironmentTexture(skyTexture);
 
-    renderer->AddActor(skyActor);
-
-	// Set a consistent background color for the VR scene
+    // Fallback background colour in case the HDR file fails to load.
     renderer->SetBackground(colors->GetColor3d("BkgColor").GetData());
 
 	// Set up the VR camera and interactor
