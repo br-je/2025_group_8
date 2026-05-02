@@ -100,6 +100,103 @@ void VRRenderThread::stopVR()
     stopRequested = true;
 }
 
+// Fires when a controller button is pressed or released.
+// Trigger press: find the nearest actor to the controller tip and grab it.
+// Trigger release: drop it.
+void VRRenderThread::OnButton3D(vtkObject* /*caller*/, unsigned long /*eventId*/,
+                                 void* clientData, void* callData)
+{
+    auto* self = static_cast<VRRenderThread*>(clientData);
+    auto* ed   = static_cast<vtkEventData*>(callData);
+    auto* bd   = ed->GetAsEventDataButton3D();
+    if (!bd)
+        return;
+
+    if (bd->GetInput() != vtkEventDataDeviceInput::Trigger)
+        return;
+
+    double pos[3];
+    bd->GetWorldPosition(pos);
+
+    if (bd->GetAction() == vtkEventDataAction::Press)
+    {
+        // Find the actor whose centre is closest to the controller tip,
+        // within a 25 cm grab radius. Using squared distance avoids sqrt.
+        const double grabRadiusSq = 0.25 * 0.25;
+        vtkSmartPointer<vtkActor> closest;
+        double minDistSq = grabRadiusSq;
+
+        for (auto& actor : self->actors)
+        {
+            if (!actor)
+                continue;
+
+            double bounds[6];
+            actor->GetBounds(bounds);
+
+            double cx = (bounds[0] + bounds[1]) * 0.5;
+            double cy = (bounds[2] + bounds[3]) * 0.5;
+            double cz = (bounds[4] + bounds[5]) * 0.5;
+
+            double dx = pos[0] - cx;
+            double dy = pos[1] - cy;
+            double dz = pos[2] - cz;
+            double distSq = dx*dx + dy*dy + dz*dz;
+
+            if (distSq < minDistSq)
+            {
+                minDistSq = distSq;
+                closest   = actor;
+            }
+        }
+
+        self->draggedActor    = closest;
+        self->grabbingDevice  = bd->GetDevice();
+        self->lastControllerPos[0] = pos[0];
+        self->lastControllerPos[1] = pos[1];
+        self->lastControllerPos[2] = pos[2];
+    }
+    else if (bd->GetAction() == vtkEventDataAction::Release)
+    {
+        self->draggedActor   = nullptr;
+        self->grabbingDevice = vtkEventDataDevice::Unknown;
+    }
+}
+
+// Fires every time a tracked controller moves.
+// If a grab is active and this is the grabbing controller, move the actor by the same delta.
+void VRRenderThread::OnMove3D(vtkObject* /*caller*/, unsigned long /*eventId*/,
+                               void* clientData, void* callData)
+{
+    auto* self = static_cast<VRRenderThread*>(clientData);
+    if (!self->draggedActor)
+        return;
+
+    auto* ed = static_cast<vtkEventData*>(callData);
+    auto* md = ed->GetAsEventDataDevice3D();
+    if (!md)
+        return;
+
+    // Ignore movement from the other controller.
+    if (md->GetDevice() != self->grabbingDevice)
+        return;
+
+    double pos[3];
+    md->GetWorldPosition(pos);
+
+    double* cur = self->draggedActor->GetPosition();
+    self->draggedActor->SetPosition(
+        cur[0] + pos[0] - self->lastControllerPos[0],
+        cur[1] + pos[1] - self->lastControllerPos[1],
+        cur[2] + pos[2] - self->lastControllerPos[2]
+    );
+    self->draggedActor->Modified();
+
+    self->lastControllerPos[0] = pos[0];
+    self->lastControllerPos[1] = pos[1];
+    self->lastControllerPos[2] = pos[2];
+}
+
 /**
 This function initialises the OpenVR renderer, adds all pre-prepared actors, and continuously updates the VR scene until stopped.
  Key steps:
@@ -388,6 +485,18 @@ void VRRenderThread::run()
     vrInteractor = vtkSmartPointer<vtkOpenVRRenderWindowInteractor>::New();
     vrInteractor->SetRenderWindow(vrRenderWindow);
     vrInteractor->Initialize();
+
+    // Register controller callbacks for actor dragging.
+    // These fire on the VR thread (inside ProcessEvents), so no cross-thread risk.
+    vtkNew<vtkCallbackCommand> buttonCb;
+    buttonCb->SetCallback(VRRenderThread::OnButton3D);
+    buttonCb->SetClientData(this);
+    vrInteractor->AddObserver(vtkCommand::Button3DEvent, buttonCb);
+
+    vtkNew<vtkCallbackCommand> moveCb;
+    moveCb->SetCallback(VRRenderThread::OnMove3D);
+    moveCb->SetClientData(this);
+    vrInteractor->AddObserver(vtkCommand::Move3DEvent, moveCb);
 
     // Run our own VR loop instead of using vrInteractor->Start().
     // This allows the Stop VR button to end the loop safely.

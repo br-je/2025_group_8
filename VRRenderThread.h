@@ -17,6 +17,8 @@
 //Experimental adding STL during live VR
 #include <QMutex>
 
+#include <vtkEventData.h>
+
 #include "ModelPart.h"
 
 
@@ -60,7 +62,14 @@ private:
     vtkSmartPointer<vtkOpenVRRenderWindowInteractor> vrInteractor;
     vtkSmartPointer<vtkOpenVRRenderWindow> vrRenderWindow;
 
+    // Controller dragging state
+    vtkSmartPointer<vtkActor> draggedActor;
+    double lastControllerPos[3] = { 0.0, 0.0, 0.0 };
+    vtkEventDataDevice grabbingDevice = vtkEventDataDevice::Unknown;
 
+    // Static callbacks fired by the VR interactor on the VR thread
+    static void OnButton3D(vtkObject* caller, unsigned long eventId, void* clientData, void* callData);
+    static void OnMove3D(vtkObject* caller, unsigned long eventId, void* clientData, void* callData);
 
 };
 
