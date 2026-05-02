@@ -26,6 +26,9 @@
 #include <vtkPNGReader.h>
 #include <vtkTexture.h>
 #include <vtkSphereSource.h>
+#include <vtkPolyData.h>
+#include <vtkPoints.h>
+#include <vtkCellArray.h>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
@@ -177,30 +180,34 @@ void VRRenderThread::run()
 
     double vrCentreX = 0.0;
     double vrCentreY = 0.0;
-    double vrCentreZ = 0.0;
-    double vrScale = 1.0;
+    double vrZMin    = 0.0;
+    double vrScale   = 1.0;
     bool hasVRTransform = false;
 
     if (hasBounds)
     {
         double centreX = (globalBounds[0] + globalBounds[1]) / 2.0;
         double centreY = (globalBounds[2] + globalBounds[3]) / 2.0;
-        double centreZ = (globalBounds[4] + globalBounds[5]) / 2.0;
 
         double sizeX = globalBounds[1] - globalBounds[0];
         double sizeY = globalBounds[3] - globalBounds[2];
         double sizeZ = globalBounds[5] - globalBounds[4];
 
+        // The lowest Z across the whole assembly — used to place the model
+        // so its base sits exactly on the floor (world Y = 0).
+        double zMin = globalBounds[4];
+
         double maxSize = std::max(sizeX, std::max(sizeY, sizeZ));
-		// We can change the scale factor here to make the CAD assembly larger or smaller in the VR scene (currently set to 1.5)
         if (maxSize > 0.0)
         {
-            double scale = 1.5 / maxSize;
+            // 0.6 gives a comfortable viewing size — the longest axis of the
+            // assembly becomes 0.6m, which fits fully in view at 2m distance.
+            double scale = 0.6 / maxSize;
 
             vrCentreX = centreX;
             vrCentreY = centreY;
-            vrCentreZ = centreZ;
-            vrScale = scale;
+            vrZMin    = zMin;
+            vrScale   = scale;
             hasVRTransform = true;
 
             for (auto actor : actors)
@@ -209,18 +216,24 @@ void VRRenderThread::run()
                 {
                     continue;
                 }
-				// Scale the actor uniformly
+
                 actor->SetScale(scale, scale, scale);
 
-                // Move whole assembly together, not each part separately
+                // RotateX(-90) converts CAD Z-up to VR Y-up.
+                // After rotation: object-X -> world-X,
+                //                 object-Z -> world-Y,
+                //                 object-Y -> world -Z.
+                // X: centre on world X=0 using centreX.
+                // Y: use zMin (not centreZ) so the model base lands at Y=0,
+                //    not the centroid — otherwise the model is half-buried.
+                // Z: use centreY so the assembly is centred in depth, then
+                //    push 2m in front of the user.
+                actor->RotateX(-90.0);
                 actor->SetPosition(
                     -centreX * scale,
-                    -centreY * scale,
-                    -centreZ * scale - 2.0
+                    -zMin    * scale,
+                     centreY * scale - 2.0
                 );
-
-                // Keep the orientation correction from the example/email
-                actor->RotateX(-90.0);
             }
         }
     }
@@ -256,10 +269,10 @@ void VRRenderThread::run()
 	// Play around with the floor position and size to best fit the CAD assembly and improve depth perception in VR.
     vtkNew<vtkPlaneSource> floorSource;
 
-    double floorY = -1.0; // adjust height
-    floorSource->SetOrigin(-3.0, floorY, -5.0);
-    floorSource->SetPoint1(3.0, floorY, -5.0);
-    floorSource->SetPoint2(-3.0, floorY, 5.0);
+    double floorY = 0.0;
+    floorSource->SetOrigin(-5.0, floorY, -8.0);
+    floorSource->SetPoint1(5.0, floorY, -8.0);
+    floorSource->SetPoint2(-5.0, floorY, 4.0);
     floorSource->Update();
 
     vtkNew<vtkPolyDataMapper> floorMapper;
@@ -271,8 +284,58 @@ void VRRenderThread::run()
     floorActor->GetProperty()->SetOpacity(1.0);
 
 
-	//Add floor to the scene before the sky to ensure it appears in front of the skybox
     renderer->AddActor(floorActor);
+
+    // Grid of lines sitting just above the floor under the car.
+    // The car appears centred at X=0, Z=-2.0, so the grid is centred there.
+    // Y=0.002 is a tiny offset above the floor to prevent z-fighting.
+    {
+        const double gridY      =  0.002;
+        const double gridCentreZ = -2.0;
+        const double halfExtent  =  1.5;   // grid reaches 1.5m either side of centre
+        const double spacing     =  0.1;   // one line every 10cm
+
+        const double xMin = -halfExtent;
+        const double xMax =  halfExtent;
+        const double zMin =  gridCentreZ - halfExtent;
+        const double zMax =  gridCentreZ + halfExtent;
+
+        vtkNew<vtkPolyData>  gridData;
+        vtkNew<vtkPoints>    gridPoints;
+        vtkNew<vtkCellArray> gridLines;
+
+        // Lines running along Z (constant X)
+        for (double x = xMin; x <= xMax + 1e-9; x += spacing)
+        {
+            vtkIdType p0 = gridPoints->InsertNextPoint(x, gridY, zMin);
+            vtkIdType p1 = gridPoints->InsertNextPoint(x, gridY, zMax);
+            vtkIdType pts[2] = { p0, p1 };
+            gridLines->InsertNextCell(2, pts);
+        }
+
+        // Lines running along X (constant Z)
+        for (double z = zMin; z <= zMax + 1e-9; z += spacing)
+        {
+            vtkIdType p0 = gridPoints->InsertNextPoint(xMin, gridY, z);
+            vtkIdType p1 = gridPoints->InsertNextPoint(xMax, gridY, z);
+            vtkIdType pts[2] = { p0, p1 };
+            gridLines->InsertNextCell(2, pts);
+        }
+
+        gridData->SetPoints(gridPoints);
+        gridData->SetLines(gridLines);
+
+        vtkNew<vtkPolyDataMapper> gridMapper;
+        gridMapper->SetInputData(gridData);
+
+        vtkNew<vtkActor> gridActor;
+        gridActor->SetMapper(gridMapper);
+        gridActor->GetProperty()->SetColor(0.8, 0.8, 0.8);
+        gridActor->GetProperty()->SetLineWidth(1.0);
+        gridActor->PickableOff();
+
+        renderer->AddActor(gridActor);
+    }
 
    // Add a simple environment sphere around the VR scene.
    // This acts as a lightweight skybox/scenery without relying on image files.
@@ -347,12 +410,12 @@ void VRRenderThread::run()
             if (hasVRTransform)
             {
                 actor->SetScale(vrScale, vrScale, vrScale);
+                actor->RotateX(-90.0);
                 actor->SetPosition(
                     -vrCentreX * vrScale,
-                    -vrCentreY * vrScale,
-                    -vrCentreZ * vrScale - 2.0
+                    -vrZMin    * vrScale,
+                     vrCentreY * vrScale - 2.0
                 );
-                actor->RotateX(-90.0);
             }
 
             actors.append(actor);
