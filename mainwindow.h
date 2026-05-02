@@ -42,6 +42,7 @@ private slots:
     void on_actionOpen_Folder_triggered();
     void toggleVRAnimation();
     void resetModelView();
+    void toggleExplode();
 
 public slots:
     void handleClearSelection();

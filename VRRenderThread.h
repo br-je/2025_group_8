@@ -33,6 +33,7 @@ public:
     void queueVRPipelineUpdate(ModelPart* part);
     void stopVR();
     void resetView();
+    void toggleExplode();
 
 	//Animation control
     void setAnimationEnabled(bool enabled);
@@ -53,10 +54,16 @@ private:
     std::atomic<bool> stopRequested{ false };
     std::atomic<bool> resetRequested{ false };
     std::atomic<bool> animationEnabled{ false };
+    std::atomic<bool> explodeToggleRequested{ false };
 
     QList<std::array<double, 3>> originalPositions;
     QList<std::array<double, 3>> originalScales;
     QList<std::array<double, 3>> originalOrientations;
+
+    // Explode animation state (only accessed on VR thread)
+    bool explodeActive = false;
+    double explodeProgress = 0.0;
+    QList<std::array<double, 3>> explodedPositions;
 
 
     vtkSmartPointer<vtkOpenVRRenderWindowInteractor> vrInteractor;

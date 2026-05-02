@@ -132,6 +132,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->ResetView, &QPushButton::released,
         this, &MainWindow::resetModelView);
+
+    connect(ui->explodeButton, &QPushButton::released,
+        this, &MainWindow::toggleExplode);
 }
 
 MainWindow::~MainWindow()
@@ -301,6 +304,18 @@ void MainWindow::resetModelView()
     }
 
     emit statusUpdateMessage("Model view reset", 3000);
+}
+
+void MainWindow::toggleExplode()
+{
+    if (!vrThread || !vrThread->isRunning())
+    {
+        emit statusUpdateMessage("Start VR first to use the explode animation", 3000);
+        return;
+    }
+
+    vrThread->toggleExplode();
+    emit statusUpdateMessage("Explode toggled", 2000);
 }
 
 void MainWindow::openContextMenu(const QPoint &pos)

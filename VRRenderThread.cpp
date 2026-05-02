@@ -66,6 +66,11 @@ void VRRenderThread::addActorOffline(vtkSmartPointer<vtkActor> actor)
     }
 }
 
+void VRRenderThread::toggleExplode()
+{
+    explodeToggleRequested = true;
+}
+
 void VRRenderThread::queueVRPipelineUpdate(ModelPart* part)
 {
     if (!part)
@@ -111,6 +116,14 @@ void VRRenderThread::OnButton3D(vtkObject* /*caller*/, unsigned long /*eventId*/
     auto* bd   = ed->GetAsEventDataButton3D();
     if (!bd)
         return;
+
+    // Grip button toggles the explode animation.
+    if (bd->GetInput() == vtkEventDataDeviceInput::Grip &&
+        bd->GetAction() == vtkEventDataAction::Press)
+    {
+        self->toggleExplode();
+        return;
+    }
 
     if (bd->GetInput() != vtkEventDataDeviceInput::Trigger)
         return;
@@ -434,6 +447,48 @@ void VRRenderThread::run()
         originalOrientations.append({ orientation[0], orientation[1], orientation[2] });
     }
 
+    // Compute exploded positions — each part moves outward from the assembly centroid.
+    // Direction is from centroid to each part's bounds centre; distance is 0.3m.
+    explodedPositions.clear();
+    {
+        // Find the world-space bounds centre of each actor (geometry centroid after transforms).
+        QList<std::array<double, 3>> boundsCentres;
+        for (auto actor : actors)
+        {
+            if (!actor) continue;
+            double b[6];
+            actor->GetBounds(b);
+            boundsCentres.append({
+                (b[0] + b[1]) * 0.5,
+                (b[2] + b[3]) * 0.5,
+                (b[4] + b[5]) * 0.5
+            });
+        }
+
+        // Assembly centroid = average of all bounds centres.
+        double cx = 0, cy = 0, cz = 0;
+        for (auto& bc : boundsCentres) { cx += bc[0]; cy += bc[1]; cz += bc[2]; }
+        int n = boundsCentres.size();
+        if (n > 0) { cx /= n; cy /= n; cz /= n; }
+
+        // Exploded position = original SetPosition + outward direction * 0.3m.
+        for (int i = 0; i < actors.size() && i < (int)boundsCentres.size(); i++)
+        {
+            double dx = boundsCentres[i][0] - cx;
+            double dy = boundsCentres[i][1] - cy;
+            double dz = boundsCentres[i][2] - cz;
+            double len = std::sqrt(dx*dx + dy*dy + dz*dz);
+            if (len < 0.001) { dx = 0; dy = 1; dz = 0; len = 1; }
+
+            const double explodeDist = 0.3;
+            explodedPositions.append({
+                originalPositions[i][0] + (dx / len) * explodeDist,
+                originalPositions[i][1] + (dy / len) * explodeDist,
+                originalPositions[i][2] + (dz / len) * explodeDist
+            });
+        }
+    }
+
     // Add a simple floor to make the VR environment more realistic.
     // This helps avoid the scene appearing as just a plain background colour.
 	// Play around with the floor position and size to best fit the CAD assembly and improve depth perception in VR.
@@ -633,11 +688,43 @@ void VRRenderThread::run()
             }
         }
 
+        // Explode toggle — flip direction when requested.
+        if (explodeToggleRequested.exchange(false))
+        {
+            explodeActive = !explodeActive;
+        }
+
+        // Animate explode progress toward 1.0 (exploded) or 0.0 (assembled).
+        {
+            double target = explodeActive ? 1.0 : 0.0;
+            if (explodeProgress != target)
+            {
+                explodeProgress += explodeActive ? 0.02 : -0.02;
+                explodeProgress = std::max(0.0, std::min(1.0, explodeProgress));
+
+                int count = std::min({ (int)actors.size(),
+                                       (int)originalPositions.size(),
+                                       (int)explodedPositions.size() });
+                for (int i = 0; i < count; i++)
+                {
+                    if (!actors[i]) continue;
+                    actors[i]->SetPosition(
+                        originalPositions[i][0] + (explodedPositions[i][0] - originalPositions[i][0]) * explodeProgress,
+                        originalPositions[i][1] + (explodedPositions[i][1] - originalPositions[i][1]) * explodeProgress,
+                        originalPositions[i][2] + (explodedPositions[i][2] - originalPositions[i][2]) * explodeProgress
+                    );
+                    actors[i]->Modified();
+                }
+            }
+        }
+
         // Reset model actors back to their original VR transforms.
         // This is handled inside the VR thread to avoid cross-thread VTK issues.
         if (resetRequested.exchange(false))
         {
             animationEnabled = false;
+            explodeActive    = false;
+            explodeProgress  = 0.0;
 
             int count = std::min(
                 actors.size(),
