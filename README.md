@@ -13,13 +13,17 @@
 
 This repository contains a Qt-based CAD viewer with VTK rendering and OpenVR integration for immersive CAD model viewing.
 
+The application allows STL CAD models to be loaded, organised in a tree structure, edited through the GUI, and viewed both in the desktop VTK render window and in VR through OpenVR.
+
 ---
 
 ## Documentation
 
 Doxygen documentation is generated automatically using GitHub Actions.
 
-Documentation website: https://br-je.github.io/2025_group_8/index.html
+Documentation website:
+
+https://br-je.github.io/2025_group_8/index.html
 
 The documentation includes class and file descriptions for the major components of the project.
 
@@ -42,6 +46,9 @@ The documentation includes class and file descriptions for the major components 
 - Visibility toggle implemented recursively
 - Selected items can be removed from the model tree
 - Clear selection and reset view controls included
+- Application/window icon added
+- Bottom control buttons visually improved with icons
+- GUI controls provided for starting/stopping VR, resetting the view, starting animation, and triggering explode view
 
 ### Filters
 
@@ -64,13 +71,17 @@ The documentation includes class and file descriptions for the major components 
 - STL models can be added to the VR scene while VR is running
 - Reset view control works for GUI and VR model view
 - Start/stop animation control implemented
+- Explode view implemented for VR
 - Controller tracking working
+- Stable VR render thread used to separate VR rendering from the Qt GUI thread
 
 ### VR Environment
 
 - Floor scenery implemented for spatial reference
 - Improved VR lighting added
-- Simple environment sphere added to improve immersion
+- Textured warehouse-style VR environment added using an environment sphere
+- Environment assets are stored in the `Assets/Skybox` folder
+- Environment assets are copied into the build output folder by CMake
 
 ---
 
@@ -88,6 +99,7 @@ The installer includes the runtime files required to run the application, includ
 - VTK runtime DLLs
 - OpenVR runtime DLL
 - VR bindings
+- - Required asset folders
 - The `Group8_CAD_VR.exe` application
 
 This means the installed application should run without requiring Qt, VTK, or OpenVR to be added to the system PATH.
@@ -101,11 +113,15 @@ This means the installed application should run without requiring Qt, VTK, or Op
 
 ### Notes
 
+- The installer is configured as a per-user installer.
+- It is designed to install without requiring administrator privileges.
+- The installer does not modify the system PATH.
 - SteamVR must still be installed and running for VR mode.
 - The installer is intended for running the application, not for building or modifying the source code.
 - Developers who want to build the project from source still need local installations of Qt, VTK, OpenVR, CMake, and Visual Studio.
 
 ## Build Notes
+
 These build notes are only required if building the project from source. Users who only want to run the application should use the installer from the Releases page.
 
 This project uses:
@@ -147,6 +163,7 @@ Update the paths in `CMakeLists.txt` to match your system:
 
 ---
 
+
 ## VR Usage
 
 1. Launch SteamVR.
@@ -158,8 +175,9 @@ Update the paths in `CMakeLists.txt` to match your system:
 7. Changes should update live in VR.
 8. Additional STL models can be loaded while VR is already running.
 9. Use **Start Animation** / **Stop Animation** to rotate the loaded model in VR.
-10. Use **Reset View** to reset the GUI and VR model view.
-11. Click **Stop VR** to safely stop the VR session.
+10. Use **Explode (VR)** to separate parts outward from the assembly centre.
+11. Use **Reset View** to reset the GUI and VR model view.
+12. Click **Stop VR** to safely stop the VR session.
 
 ### Expected Behaviour
 
@@ -168,30 +186,33 @@ Update the paths in `CMakeLists.txt` to match your system:
 - Colour, visibility, shrink, and clip filter changes update live in VR.
 - New STL files can be added to the VR scene while VR is running.
 - The model animation can be started and stopped from the GUI.
+- The explode view can be triggered from the GUI.
 - The view can be reset from the GUI.
 - VR can be stopped and restarted without restarting the application.
+- A textured warehouse-style environment appears around the VR scene.
 
 ---
 
 ## Key Files
 
-- `MainWindow` – Handles the Qt GUI, STL loading, tree view, context menu, model removal, reset view, animation controls, and VR controls.
+- `MainWindow` – Handles the Qt GUI, STL loading, tree view, context menu, model removal, reset view, animation controls, explode controls, and VR controls.
 - `ModelPart` – Stores CAD part data, actor properties, filters, visibility state, and VR actor links.
 - `ModelPartList` – Provides the tree model structure for loaded CAD parts.
-- `VRRenderThread` – Manages the OpenVR render thread, VR actors, live VR updates, environment, lighting, animation, and VR loop.
+- `VRRenderThread` – Manages the OpenVR render thread, VR actors, live VR updates, environment, lighting, animation, explode view, and VR loop.
 - `PartPropertiesDialog` – Allows editing of part name, colour, visibility, filters, and item removal.
+- `CMakeLists.txt` – Configures the Qt/VTK/OpenVR build, asset copying, and installer packaging setup.
+- `icons.qrc` – Stores Qt resource paths for application and GUI icons.
+- `Assets/Skybox` – Stores the environment texture used by the VR scene.
 
 ---
 
 ## Assets
 
-No external skybox assets are currently required.
-
 The current VR environment is generated in code using:
 
 - A floor plane for spatial reference
 - Improved scene lighting
-- A simple environment sphere around the VR scene
+- A simple environment around the VR scene
 
 Optional future assets, such as a textured skybox or panorama image, could be stored in an `Assets/Skybox` folder.
 
@@ -199,19 +220,20 @@ Optional future assets, such as a textured skybox or panorama image, could be st
 
 ## Next Tasks
 
-- Continue Doxygen documentation polish
-- Prepare final demo workflow
-- Test final build on the VR lab machine
-- Optional: improve GUI layout and visual polish
-- Optional: add textured skybox or enhanced VR scenery
-- Optional: investigate controller-based part movement
+- Final Doxygen polish
+- Final demo preparation
+- Verify installer matches final build
+- Optional: controller interaction (branch only)
+- Optional: minor UI polish
 
 ---
 
 ## Notes
 
+- Do not commit build folders or dependencies
 - Do not commit machine-specific paths in `CMakeLists.txt`.
-- Use Git branches for major features.
-- Ensure builds work in Release mode before committing.
+- Use branches for all changes
+- Ensure Release build works before merging
+- Avoid modifying VRRenderThread on main without VR testing
 - Avoid committing build folders, binaries, or large dependency folders.
 - Commit IDs and final installer releases should be clearly recorded for submission.
