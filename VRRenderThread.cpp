@@ -68,16 +68,6 @@ void VRRenderThread::toggleExplode()
     explodeToggleRequested = true;
 }
 
-void VRRenderThread::undoDrag()
-{
-    undoRequested = true;
-}
-
-void VRRenderThread::redoDrag()
-{
-    redoRequested = true;
-}
-
 void VRRenderThread::queueVRPipelineUpdate(ModelPart* part)
 {
     if (!part)
@@ -110,201 +100,6 @@ void VRRenderThread::stopVR()
     // Do not directly call OpenVR/VTK cleanup from the GUI thread.
     // The VR thread will detect this flag and terminate itself safely.
     stopRequested = true;
-}
-
-// Fires when a controller button is pressed or released.
-// Trigger press: find the nearest actor to the controller tip and grab it.
-// Trigger release: drop it.
-void VRRenderThread::OnButton3D(vtkObject* /*caller*/, unsigned long /*eventId*/,
-                                 void* clientData, void* callData)
-{
-    auto* self = static_cast<VRRenderThread*>(clientData);
-    auto* ed   = static_cast<vtkEventData*>(callData);
-    auto* bd   = ed->GetAsEventDataButton3D();
-    if (!bd)
-        return;
-
-    // Grip button toggles the explode animation.
-    if (bd->GetInput() == vtkEventDataDeviceInput::Grip &&
-        bd->GetAction() == vtkEventDataAction::Press)
-    {
-        self->toggleExplode();
-        return;
-    }
-
-    if (bd->GetInput() != vtkEventDataDeviceInput::Trigger)
-        return;
-
-    double pos[3];
-    bd->GetWorldPosition(pos);
-
-    if (bd->GetAction() == vtkEventDataAction::Press)
-    {
-        // Find the actor whose centre is closest to the controller tip,
-        // within a 25 cm grab radius. Using squared distance avoids sqrt.
-        const double grabRadiusSq = 0.25 * 0.25;
-        vtkSmartPointer<vtkActor> closest;
-        double minDistSq = grabRadiusSq;
-
-        for (auto& actor : self->actors)
-        {
-            if (!actor)
-                continue;
-
-            double bounds[6];
-            actor->GetBounds(bounds);
-
-            double cx = (bounds[0] + bounds[1]) * 0.5;
-            double cy = (bounds[2] + bounds[3]) * 0.5;
-            double cz = (bounds[4] + bounds[5]) * 0.5;
-
-            double dx = pos[0] - cx;
-            double dy = pos[1] - cy;
-            double dz = pos[2] - cz;
-            double distSq = dx*dx + dy*dy + dz*dz;
-
-            if (distSq < minDistSq)
-            {
-                minDistSq = distSq;
-                closest   = actor;
-            }
-        }
-
-        // If this actor was hovered (highlighted), restore its colour before grabbing.
-        if (closest && self->hoveredActor == closest)
-        {
-            closest->GetProperty()->SetColor(
-                self->hoveredOriginalColor[0],
-                self->hoveredOriginalColor[1],
-                self->hoveredOriginalColor[2]
-            );
-            closest->Modified();
-            self->hoveredActor = nullptr;
-        }
-
-        self->draggedActor   = closest;
-        self->grabbingDevice = bd->GetDevice();
-        self->lastControllerPos[0] = pos[0];
-        self->lastControllerPos[1] = pos[1];
-        self->lastControllerPos[2] = pos[2];
-
-        // Record where the actor was before the drag so we can undo it.
-        if (closest)
-        {
-            double* p = closest->GetPosition();
-            self->dragStartPosition = { p[0], p[1], p[2] };
-        }
-    }
-    else if (bd->GetAction() == vtkEventDataAction::Release)
-    {
-        // If the actor actually moved, push the move onto the undo stack.
-        if (self->draggedActor)
-        {
-            double* p = self->draggedActor->GetPosition();
-            std::array<double, 3> endPos = { p[0], p[1], p[2] };
-
-            if (endPos != self->dragStartPosition)
-            {
-                // Cap history at 20 moves to avoid unbounded memory growth.
-                if (self->undoStack.size() >= 20)
-                    self->undoStack.removeFirst();
-
-                self->undoStack.append({ self->draggedActor,
-                                         self->dragStartPosition,
-                                         endPos });
-                self->redoStack.clear();
-            }
-        }
-
-        self->draggedActor   = nullptr;
-        self->grabbingDevice = vtkEventDataDevice::Unknown;
-    }
-}
-
-// Fires every time a tracked controller moves.
-// Handles both actor dragging and hover highlighting.
-void VRRenderThread::OnMove3D(vtkObject* /*caller*/, unsigned long /*eventId*/,
-                               void* clientData, void* callData)
-{
-    auto* self = static_cast<VRRenderThread*>(clientData);
-
-    auto* ed = static_cast<vtkEventData*>(callData);
-    auto* md = ed->GetAsEventDataDevice3D();
-    if (!md)
-        return;
-
-    double pos[3];
-    md->GetWorldPosition(pos);
-
-    // --- Dragging ---
-    if (self->draggedActor && md->GetDevice() == self->grabbingDevice)
-    {
-        double* cur = self->draggedActor->GetPosition();
-        self->draggedActor->SetPosition(
-            cur[0] + pos[0] - self->lastControllerPos[0],
-            cur[1] + pos[1] - self->lastControllerPos[1],
-            cur[2] + pos[2] - self->lastControllerPos[2]
-        );
-        self->draggedActor->Modified();
-
-        self->lastControllerPos[0] = pos[0];
-        self->lastControllerPos[1] = pos[1];
-        self->lastControllerPos[2] = pos[2];
-        return;
-    }
-
-    // --- Hover highlight (only when nothing is grabbed) ---
-    const double grabRadiusSq = 0.25 * 0.25;
-    vtkSmartPointer<vtkActor> nearest;
-    double minDistSq = grabRadiusSq;
-
-    for (auto& actor : self->actors)
-    {
-        if (!actor)
-            continue;
-
-        double bounds[6];
-        actor->GetBounds(bounds);
-
-        double cx = (bounds[0] + bounds[1]) * 0.5;
-        double cy = (bounds[2] + bounds[3]) * 0.5;
-        double cz = (bounds[4] + bounds[5]) * 0.5;
-
-        double dx = pos[0] - cx;
-        double dy = pos[1] - cy;
-        double dz = pos[2] - cz;
-        double distSq = dx*dx + dy*dy + dz*dz;
-
-        if (distSq < minDistSq)
-        {
-            minDistSq = distSq;
-            nearest   = actor;
-        }
-    }
-
-    // If the hovered actor has changed, restore the old one and highlight the new one.
-    if (nearest != self->hoveredActor)
-    {
-        if (self->hoveredActor)
-        {
-            self->hoveredActor->GetProperty()->SetColor(
-                self->hoveredOriginalColor[0],
-                self->hoveredOriginalColor[1],
-                self->hoveredOriginalColor[2]
-            );
-            self->hoveredActor->Modified();
-        }
-
-        self->hoveredActor = nearest;
-
-        if (nearest)
-        {
-            // Save the part's real colour then apply a bright yellow highlight.
-            nearest->GetProperty()->GetColor(self->hoveredOriginalColor);
-            nearest->GetProperty()->SetColor(1.0, 1.0, 0.0);
-            nearest->Modified();
-        }
-    }
 }
 
 /**
@@ -418,7 +213,7 @@ void VRRenderThread::run()
         {
             // 0.6 gives a comfortable viewing size — the longest axis of the
             // assembly becomes 0.6m, which fits fully in view at 2m distance.
-            double scale = 0.6 / maxSize;
+            double scale = 1.8 / maxSize;
 
             vrCentreX = centreX;
             vrCentreY = centreY;
@@ -638,18 +433,6 @@ void VRRenderThread::run()
     vrInteractor->SetRenderWindow(vrRenderWindow);
     vrInteractor->Initialize();
 
-    // Register controller callbacks for actor dragging.
-    // These fire on the VR thread (inside ProcessEvents), so no cross-thread risk.
-    vtkNew<vtkCallbackCommand> buttonCb;
-    buttonCb->SetCallback(VRRenderThread::OnButton3D);
-    buttonCb->SetClientData(this);
-    vrInteractor->AddObserver(vtkCommand::Button3DEvent, buttonCb);
-
-    vtkNew<vtkCallbackCommand> moveCb;
-    moveCb->SetCallback(VRRenderThread::OnMove3D);
-    moveCb->SetClientData(this);
-    vrInteractor->AddObserver(vtkCommand::Move3DEvent, moveCb);
-
     // Run our own VR loop instead of using vrInteractor->Start().
     // This allows the Stop VR button to end the loop safely.
     while (!stopRequested)
@@ -721,29 +504,6 @@ void VRRenderThread::run()
             }
         }
 
-        // Undo/redo last drag move.
-        if (undoRequested.exchange(false) && !undoStack.isEmpty())
-        {
-            PartMove move = undoStack.takeLast();
-            if (move.actor)
-            {
-                move.actor->SetPosition(move.from[0], move.from[1], move.from[2]);
-                move.actor->Modified();
-            }
-            redoStack.append(move);
-        }
-
-        if (redoRequested.exchange(false) && !redoStack.isEmpty())
-        {
-            PartMove move = redoStack.takeLast();
-            if (move.actor)
-            {
-                move.actor->SetPosition(move.to[0], move.to[1], move.to[2]);
-                move.actor->Modified();
-            }
-            undoStack.append(move);
-        }
-
         // Explode toggle — flip direction when requested.
         if (explodeToggleRequested.exchange(false))
         {
@@ -781,8 +541,6 @@ void VRRenderThread::run()
             animationEnabled = false;
             explodeActive    = false;
             explodeProgress  = 0.0;
-            undoStack.clear();
-            redoStack.clear();
 
             int count = std::min(
                 actors.size(),

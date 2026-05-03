@@ -34,8 +34,6 @@ public:
     void stopVR();
     void resetView();
     void toggleExplode();
-    void undoDrag();
-    void redoDrag();
 
 	//Animation control
     void setAnimationEnabled(bool enabled);
@@ -57,19 +55,6 @@ private:
     std::atomic<bool> resetRequested{ false };
     std::atomic<bool> animationEnabled{ false };
     std::atomic<bool> explodeToggleRequested{ false };
-    std::atomic<bool> undoRequested{ false };
-    std::atomic<bool> redoRequested{ false };
-
-    // Undo/redo history for part dragging
-    struct PartMove
-    {
-        vtkSmartPointer<vtkActor> actor;
-        std::array<double, 3> from;
-        std::array<double, 3> to;
-    };
-    QList<PartMove> undoStack;
-    QList<PartMove> redoStack;
-    std::array<double, 3> dragStartPosition = { 0.0, 0.0, 0.0 };
 
     QList<std::array<double, 3>> originalPositions;
     QList<std::array<double, 3>> originalScales;
@@ -83,19 +68,6 @@ private:
 
     vtkSmartPointer<vtkOpenVRRenderWindowInteractor> vrInteractor;
     vtkSmartPointer<vtkOpenVRRenderWindow> vrRenderWindow;
-
-    // Controller dragging state
-    vtkSmartPointer<vtkActor> draggedActor;
-    double lastControllerPos[3] = { 0.0, 0.0, 0.0 };
-    vtkEventDataDevice grabbingDevice = vtkEventDataDevice::Unknown;
-
-    // Hover highlight state — the actor currently glowing, and its original colour
-    vtkSmartPointer<vtkActor> hoveredActor;
-    double hoveredOriginalColor[3] = { 1.0, 1.0, 1.0 };
-
-    // Static callbacks fired by the VR interactor on the VR thread
-    static void OnButton3D(vtkObject* caller, unsigned long eventId, void* clientData, void* callData);
-    static void OnMove3D(vtkObject* caller, unsigned long eventId, void* clientData, void* callData);
 
 };
 

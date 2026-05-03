@@ -43,8 +43,6 @@ private slots:
     void toggleVRAnimation();
     void resetModelView();
     void toggleExplode();
-    void undoDrag();
-    void redoDrag();
 
 public slots:
     void handleClearSelection();
