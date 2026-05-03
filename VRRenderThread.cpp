@@ -29,6 +29,11 @@
 #include <vtkPolyData.h>
 #include <vtkPoints.h>
 #include <vtkCellArray.h>
+#include <vtkHDRReader.h>
+#include <vtkImageFlip.h>
+#include <vtkImageData.h>
+#include <vtkJPEGReader.h>
+#include <vtkTexturedSphereSource.h>
 
 //Live updating VR method https://doc.qt.io/qt-6/qmutexlocker.html (Experimental, but prevents crashing currently)
 #include <QMutexLocker>
@@ -390,31 +395,44 @@ void VRRenderThread::run()
         renderer->AddActor(gridActor);
     }
 
-   // Add a simple environment sphere around the VR scene.
-   // This acts as a lightweight skybox/scenery without relying on image files.
-    vtkNew<vtkSphereSource> skySource;
-    skySource->SetRadius(25.0);
-    skySource->SetThetaResolution(64);
-    skySource->SetPhiResolution(32);
-    skySource->SetCenter(0.0, 0.0, -2.0);
-    skySource->Update();
+    // Add a textured environment sphere around the VR scene.
+    // JPG is used instead of HDR to avoid overexposure/tone-mapping issues in OpenVR.
+    {
+        const char* skyboxPath = "Assets/Skybox/empty_warehouse_01_8k.jpg";
 
-    vtkNew<vtkPolyDataMapper> skyMapper;
-    skyMapper->SetInputConnection(skySource->GetOutputPort());
+        vtkNew<vtkJPEGReader> jpgReader;
+        jpgReader->SetFileName(skyboxPath);
+        jpgReader->Update();
 
-    vtkNew<vtkActor> skyActor;
-    skyActor->SetMapper(skyMapper);
+        vtkNew<vtkTexture> skyTexture;
+        skyTexture->SetInputConnection(jpgReader->GetOutputPort());
+        skyTexture->InterpolateOn();
 
-    // Make it look like a distant dark-blue VR environment.
-    skyActor->GetProperty()->SetColor(0.04, 0.07, 0.14);
-    skyActor->GetProperty()->SetAmbient(1.0);
-    skyActor->GetProperty()->SetDiffuse(0.0);
-    skyActor->GetProperty()->SetSpecular(0.0);
+        vtkNew<vtkTexturedSphereSource> skySource;
+        skySource->SetRadius(25.0);
+        skySource->SetThetaResolution(96);
+        skySource->SetPhiResolution(48);
+        // vtkTexturedSphereSource is centred at the origin.
+        // Move the actor slightly instead if needed.
 
-    // Prevent the sky from being selected/interacted with.
-    skyActor->PickableOff();
+        vtkNew<vtkPolyDataMapper> skyMapper;
+        skyMapper->SetInputConnection(skySource->GetOutputPort());
 
-    renderer->AddActor(skyActor);
+        vtkNew<vtkActor> skyActor;
+        skyActor->SetMapper(skyMapper);
+        skyActor->SetTexture(skyTexture);
+        skyActor->SetPosition(0.0, 0.0, -2.0);
+        skyActor->RotateX(-90.0);
+
+        // Make the background visible without relying on scene lights.
+        skyActor->GetProperty()->SetAmbient(1.0);
+        skyActor->GetProperty()->SetDiffuse(0.0);
+        skyActor->GetProperty()->SetSpecular(0.0);
+
+        skyActor->PickableOff();
+
+        renderer->AddActor(skyActor);
+    }
 
 	// Set a consistent background color for the VR scene
     renderer->SetBackground(colors->GetColor3d("BkgColor").GetData());

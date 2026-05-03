@@ -103,3 +103,75 @@ add_custom_command(TARGET VRBindings PRE_BUILD
     ${CMAKE_SOURCE_DIR}/vrbindings
     ${CMAKE_BINARY_DIR}/vrbindings
 )
+
+add_custom_command(TARGET Group8_CAD_VR POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/Assets
+    $<TARGET_FILE_DIR:Group8_CAD_VR>/Assets
+)
+
+# ------------------------------------------------------------
+# Installer / CPack setup
+# ------------------------------------------------------------
+
+include(InstallRequiredSystemLibraries)
+
+# Local deploy folder containing the tested standalone runtime package.
+# This folder should contain:
+# - Group8_CAD_VR.exe
+# - Qt DLLs and plugin folders
+# - VTK DLLs
+# - openvr_api.dll
+# - vrbindings folder
+#
+# This path is intentionally configurable so machine-specific deploy paths
+# do not need to be committed permanently.
+set(GROUP8_DEPLOY_DIR "" CACHE PATH "Path to tested deploy folder for installer packaging")
+
+if(GROUP8_DEPLOY_DIR)
+    install(
+        DIRECTORY "${GROUP8_DEPLOY_DIR}/"
+        DESTINATION "."
+    )
+else()
+    message(WARNING "GROUP8_DEPLOY_DIR is not set. Installer will not include deploy folder contents.")
+endif()
+
+set(CPACK_PACKAGE_NAME "Group8 CAD VR")
+set(CPACK_PACKAGE_VENDOR "University of Nottingham Group 8")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Qt, VTK and OpenVR CAD viewer")
+set(CPACK_PACKAGE_VERSION "1.0.0")
+
+if(WIN32)
+    set(CPACK_GENERATOR "NSIS")
+
+    # Make the installer per-user rather than system-wide.
+    # This avoids requiring administrator privileges during the demo.
+    set(CPACK_NSIS_INSTALL_ROOT "$LOCALAPPDATA")
+
+    # Do not ask to modify the system PATH.
+    # Modifying PATH can trigger admin requirements.
+    set(CPACK_NSIS_MODIFY_PATH OFF)
+
+    # Request normal user-level execution instead of admin elevation.
+    set(CPACK_NSIS_DEFINES "RequestExecutionLevel user")
+else()
+    set(CPACK_GENERATOR "ZIP")
+endif()
+
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "Group8 CAD VR")
+
+# NSIS Start Menu shortcut settings
+set(CPACK_NSIS_DISPLAY_NAME "Group8 CAD VR")
+set(CPACK_NSIS_PACKAGE_NAME "Group8 CAD VR")
+set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+
+set(CPACK_NSIS_CREATE_ICONS_EXTRA
+    "CreateShortCut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Group8 CAD VR.lnk' '$INSTDIR\\\\Group8_CAD_VR.exe'"
+)
+
+set(CPACK_NSIS_DELETE_ICONS_EXTRA
+    "Delete '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Group8 CAD VR.lnk'"
+)
+
+include(CPack)
