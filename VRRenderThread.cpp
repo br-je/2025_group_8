@@ -449,6 +449,11 @@ void VRRenderThread::run()
 
     vrInteractor = vtkSmartPointer<vtkOpenVRRenderWindowInteractor>::New();
     vrInteractor->SetRenderWindow(vrRenderWindow);
+
+    // Tell VTK/OpenVR where the SteamVR action manifest is.
+    // The JSON file must be copied next to the executable.
+    vrInteractor->SetActionManifestFileName("vtk_openvr_actions.json");
+
     vrInteractor->Initialize();
 
     // Run our own VR loop instead of using vrInteractor->Start().
