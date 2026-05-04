@@ -104,7 +104,9 @@ private slots:
     * @brief Opens a folder and loads STL files into the model tree.
     */
     void on_actionOpen_Folder_triggered();
-
+/**
+ * @brief Clears the current tree selection.
+ */
 public slots:
     void handleClearSelection();
 
