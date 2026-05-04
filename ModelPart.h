@@ -151,19 +151,67 @@ public:
      */
     bool removeChild(int row);
 
-	// Shrink filter for VR rendering
-    void setShrinkFilter(bool enabled, double factor);
-    bool shrinkFilterEnabled() const;
-    double shrinkFactor() const;
-    void updatePipeline();
-    void updateVRPipeline();
+/**
+ * @brief Sets the shrink filter used for rendering.
+ * @param enabled True to enable the filter, false to disable it.
+ * @param factor Shrink factor applied to the model.
+ */
+void setShrinkFilter(bool enabled, double factor);
 
-	// Clip filter for VR rendering
-    void setClipFilter(bool enabled, int axis, double value, bool invert);
-    bool clipFilterEnabled() const;
-    int clipAxis() const;
-    double clipValue() const;
-    bool clipInvert() const;
+/**
+ * @brief Checks whether the shrink filter is enabled.
+ * @return True if the shrink filter is enabled.
+ */
+bool shrinkFilterEnabled() const;
+
+/**
+ * @brief Gets the shrink filter factor.
+ * @return Current shrink factor.
+ */
+double shrinkFactor() const;
+
+/**
+ * @brief Updates the main VTK rendering pipeline after filter/property changes.
+ */
+void updatePipeline();
+
+/**
+ * @brief Updates the VR rendering pipeline after filter/property changes.
+ */
+void updateVRPipeline();
+
+/**
+ * @brief Sets the clip filter used for rendering.
+ * @param enabled True to enable the filter, false to disable it.
+ * @param axis Axis used for clipping.
+ * @param value Clip position along the selected axis.
+ * @param invert True to invert the clipped region.
+ */
+void setClipFilter(bool enabled, int axis, double value, bool invert);
+
+/**
+ * @brief Checks whether the clip filter is enabled.
+ * @return True if the clip filter is enabled.
+ */
+bool clipFilterEnabled() const;
+
+/**
+ * @brief Gets the axis used by the clip filter.
+ * @return Clip axis index.
+ */
+int clipAxis() const;
+
+/**
+ * @brief Gets the clip filter value.
+ * @return Clip position value.
+ */
+double clipValue() const;
+
+/**
+ * @brief Checks whether the clip filter is inverted.
+ * @return True if the clipped region is inverted.
+ */
+bool clipInvert() const;
 
 private:
 
@@ -188,29 +236,45 @@ private:
     /** Blue colour component from 0 to 255. */
     unsigned char colourB;
 	
-	/* These are vtk properties that will be used to load/render a model of this part,
-	 * commented out for now but will be used later
-	 */
+	/** VTK objects used to load and render this model part. */
     vtkSmartPointer<vtkSTLReader>               file;               /**< Datafile from which part loaded */
     vtkSmartPointer<vtkMapper>                  mapper;             /**< Mapper for rendering */
     vtkSmartPointer<vtkActor>                   actor;              /**< Actor for rendering */
     vtkSmartPointer<vtkActor>                   vrActor;            /**< Separate actor used for VR rendering */
     vtkColor3<unsigned char>                    colour;             /**< User defineable colour */
 
-	// Shrink filter for VR rendering
-    bool applyShrinkFilter;
-    double shrinkFilterFactor;
-    vtkSmartPointer<vtkShrinkFilter> shrinkFilter;
+	/** Stores whether the shrink filter is enabled. */
+bool applyShrinkFilter;
 
-	// Clip filter for VR rendering
-    bool applyClipFilter;
-    int clipFilterAxis;
-    double clipFilterValue;
-    bool invertClipFilter;
-    vtkSmartPointer<vtkClipDataSet> clipFilter;
-    vtkSmartPointer<vtkPlane> clipPlane;
-    vtkSmartPointer<vtkDataSetMapper> vrMapper;
-    vtkSmartPointer<vtkDataSet> vrFilteredData;
+/** Factor used by the shrink filter. */
+double shrinkFilterFactor;
+
+/** VTK shrink filter used to reduce model geometry size. */
+vtkSmartPointer<vtkShrinkFilter> shrinkFilter;
+
+/** Stores whether the clip filter is enabled. */
+bool applyClipFilter;
+
+/** Axis used by the clip filter. */
+int clipFilterAxis;
+
+/** Position value used by the clip filter. */
+double clipFilterValue;
+
+/** Stores whether the clip filter output should be inverted. */
+bool invertClipFilter;
+
+/** VTK clip filter used to cut model geometry. */
+vtkSmartPointer<vtkClipDataSet> clipFilter;
+
+/** Plane used to define the clipping position and direction. */
+vtkSmartPointer<vtkPlane> clipPlane;
+
+/** Mapper used for filtered VR geometry. */
+vtkSmartPointer<vtkDataSetMapper> vrMapper;
+
+/** Filtered data used for VR rendering. */
+vtkSmartPointer<vtkDataSet> vrFilteredData;
 
 };  
 
