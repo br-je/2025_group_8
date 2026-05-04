@@ -338,6 +338,7 @@ void VRRenderThread::run()
 
     vtkNew<vtkActor> floorActor;
     floorActor->SetMapper(floorMapper);
+    floorActor->PickableOff();
     floorActor->GetProperty()->SetColor(0.35, 0.35, 0.35);
     floorActor->GetProperty()->SetOpacity(1.0);
 
@@ -449,6 +450,11 @@ void VRRenderThread::run()
 
     vrInteractor = vtkSmartPointer<vtkOpenVRRenderWindowInteractor>::New();
     vrInteractor->SetRenderWindow(vrRenderWindow);
+
+    // Tell VTK/OpenVR where the SteamVR action manifest is.
+    // The JSON file must be copied next to the executable.
+    vrInteractor->SetActionManifestFileName("vrbindings/vtk_openvr_actions.json");
+
     vrInteractor->Initialize();
 
     // Run our own VR loop instead of using vrInteractor->Start().
