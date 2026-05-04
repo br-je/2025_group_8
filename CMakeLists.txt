@@ -105,24 +105,6 @@ add_custom_command(TARGET VRBindings PRE_BUILD
 )
 
 add_custom_command(TARGET Group8_CAD_VR POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/vrbindings/vtk_openvr_actions.json
-        $<TARGET_FILE_DIR:Group8_CAD_VR>/vtk_openvr_actions.json
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/vrbindings/vtk_openvr_binding_oculus_touch.json
-        $<TARGET_FILE_DIR:Group8_CAD_VR>/vtk_openvr_binding_oculus_touch.json
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/vrbindings/vtk_openvr_binding_vive_controller.json
-        $<TARGET_FILE_DIR:Group8_CAD_VR>/vtk_openvr_binding_vive_controller.json
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/vrbindings/vtk_openvr_binding_knuckles.json
-        $<TARGET_FILE_DIR:Group8_CAD_VR>/vtk_openvr_binding_knuckles.json
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/vrbindings/vtk_openvr_binding_hpmotioncontroller.json
-        $<TARGET_FILE_DIR:Group8_CAD_VR>/vtk_openvr_binding_hpmotioncontroller.json
-)
-
-add_custom_command(TARGET Group8_CAD_VR POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_SOURCE_DIR}/Assets
     $<TARGET_FILE_DIR:Group8_CAD_VR>/Assets
