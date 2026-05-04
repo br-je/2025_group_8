@@ -68,6 +68,18 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Attach model to tree view
     ui->treeView->setModel(this->partList);
+    #include <QHeaderView>
+
+    ui->treeView->header()->setStretchLastSection(false);
+
+    // Make "Part" column expand to fill space
+    ui->treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+
+    // Make "Visible?" column only as wide as needed
+    ui->treeView->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+
+    // Slightly reduce indentation so names don't get pushed too far right
+    ui->treeView->setIndentation(12);
 
     //Create top-level folder node
     QModelIndex rootIndex;
@@ -106,7 +118,9 @@ MainWindow::MainWindow(QWidget *parent)
             ui->statusbar, &QStatusBar::showMessage);
 
     connect(ui->pushButton, &QPushButton::released,
-            this, &MainWindow::handleButton1);
+        this, &MainWindow::toggleVRAnimation);
+
+    ui->pushButton->setText("Start Animation");
 
     connect(ui->ClearSelectionButton, &QPushButton::released,
             this, &MainWindow::handleClearSelection);
@@ -116,6 +130,15 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->StartVRButton, &QPushButton::released,
         this, &MainWindow::startVR);
+
+    connect(ui->StopVRButton, &QPushButton::released,
+        this, &MainWindow::stopVR);
+
+    connect(ui->ResetView, &QPushButton::released,
+        this, &MainWindow::resetModelView);
+
+    connect(ui->explodeButton, &QPushButton::released,
+        this, &MainWindow::toggleExplode);
 }
 
 MainWindow::~MainWindow()
@@ -170,6 +193,7 @@ void MainWindow::on_actionOpen_File_triggered()
         return;
 
     part->loadSTL(fileName);
+    addPartToLiveVR(part);
 
     ui->treeView->expand(parentIndex);
     ui->treeView->setCurrentIndex(childIndex);
@@ -216,6 +240,88 @@ void MainWindow::on_actionOpen_Folder_triggered()
     );
 }
 
+void MainWindow::addPartToLiveVR(ModelPart* part)
+{
+    if (!part)
+    {
+        return;
+    }
+
+    if (!vrThread || !vrThread->isRunning())
+    {
+        return;
+    }
+
+    vtkSmartPointer<vtkActor> vrActor = part->getNewActor();
+
+    if (vrActor)
+    {
+        vrThread->addActorOffline(vrActor);
+    }
+}
+
+void MainWindow::toggleVRAnimation()
+{
+    vrAnimationEnabled = !vrAnimationEnabled;
+
+    if (vrThread && vrThread->isRunning())
+    {
+        vrThread->setAnimationEnabled(vrAnimationEnabled);
+    }
+
+    ui->pushButton->setText(vrAnimationEnabled ? "Stop Animation" : "Start Animation");
+
+    emit statusUpdateMessage(
+        vrAnimationEnabled ? "VR animation enabled" : "VR animation disabled",
+        3000
+    );
+}
+
+void MainWindow::resetModelView()
+{
+    // Stop animation so the model stays at the reset position.
+    vrAnimationEnabled = false;
+    ui->pushButton->setText("Start Animation");
+
+    if (vrThread && vrThread->isRunning())
+    {
+        vrThread->setAnimationEnabled(false);
+        vrThread->resetView();
+    }
+
+    // Reset the GUI camera to fit the current model.
+    if (renderer)
+    {
+        renderer->ResetCamera();
+
+        if (renderer->GetActiveCamera())
+        {
+            renderer->GetActiveCamera()->Azimuth(30);
+            renderer->GetActiveCamera()->Elevation(30);
+            renderer->ResetCameraClippingRange();
+        }
+    }
+
+    if (renderWindow)
+    {
+        renderWindow->Render();
+    }
+
+    emit statusUpdateMessage("Model view reset", 3000);
+}
+
+void MainWindow::toggleExplode()
+{
+    if (!vrThread || !vrThread->isRunning())
+    {
+        emit statusUpdateMessage("Start VR first to use the explode animation", 3000);
+        return;
+    }
+
+    vrThread->toggleExplode();
+    emit statusUpdateMessage("Explode toggled", 2000);
+}
+
 void MainWindow::openContextMenu(const QPoint &pos)
 {
     QModelIndex index = ui->treeView->indexAt(pos);
@@ -245,12 +351,21 @@ void MainWindow::openContextMenu(const QPoint &pos)
 
         if (dialog.exec() == QDialog::Accepted)
         {
-            // If the selected item is a folder/group, apply its colour and visibility
+            if (dialog.removalRequested())
+            {
+                removeSelectedItem();
+                return;
+            }
+
+            // If the selected item is a folder/group, apply its colour, visibility and filters
             // to all child parts below it.
             applyPropertiesToChildren(part);
 
             ui->treeView->viewport()->update();
             updateRender();
+
+            // Push filter/property updates to the VR thread if VR is running.
+            queueVRUpdatesFromTree(index);
 
             emit statusUpdateMessage("Item properties updated", 3000);
         }
@@ -342,6 +457,14 @@ void MainWindow::removeSelectedItem()
         return;
     }
 
+    ModelPart* part = static_cast<ModelPart*>(index.internalPointer());
+
+    if (part)
+    {
+        part->setVisible(false);
+        applyPropertiesToChildren(part);
+    }
+
     QModelIndex parentIndex = index.parent();
     int row = index.row();
 
@@ -367,7 +490,7 @@ int MainWindow::addVRActorsFromTree(const QModelIndex& index, VRRenderThread* th
     {
         ModelPart* part = static_cast<ModelPart*>(index.internalPointer());
 
-        if (part && part->visible())
+        if (part)
         {
             vtkSmartPointer<vtkActor> vrActor = part->getNewActor();
 
@@ -432,7 +555,41 @@ void MainWindow::startVR()
         vrThread = nullptr;
         });
 
+    vrThread->setAnimationEnabled(vrAnimationEnabled);
+
     vrThread->start();
+}
+
+void MainWindow::stopVR()
+{
+    if (!vrThread || !vrThread->isRunning())
+    {
+        emit statusUpdateMessage("VR is not currently running", 3000);
+        return;
+    }
+
+    emit statusUpdateMessage("Stopping VR...", 3000);
+    vrThread->stopVR();
+}
+
+void MainWindow::queueVRUpdatesFromTree(const QModelIndex& index)
+{
+    if (!vrThread || !vrThread->isRunning())
+        return;
+
+    if (index.isValid())
+    {
+        ModelPart* part = static_cast<ModelPart*>(index.internalPointer());
+        if (part)
+            vrThread->queueVRPipelineUpdate(part);
+    }
+
+    int rows = partList->rowCount(index);
+    for (int i = 0; i < rows; i++)
+    {
+        QModelIndex childIndex = partList->index(i, 0, index);
+        queueVRUpdatesFromTree(childIndex);
+    }
 }
 
 // Recursively loads STL files from the specified directory and adds them to the model tree under the given parent index.
@@ -462,6 +619,7 @@ int MainWindow::loadSTLFilesFromDirectory(const QString& dirPath, QModelIndex pa
         if (part)
         {
             part->loadSTL(fileInfo.absoluteFilePath());
+            addPartToLiveVR(part);
             loadedCount++;
         }
     }

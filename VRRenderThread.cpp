@@ -17,12 +17,34 @@
 #include <vtkProperty.h>
 #include <vtkNamedColors.h>
 #include <vtkNew.h>
+#include <vtkLight.h>
+#include <vtkCallbackCommand.h>
+#include <vtkCommand.h>
 
 #include <array>
 
 //These includes have been used to scale the objects in the scene
 #include <algorithm>
 #include <limits>
+#include <cmath>
+
+//For skybox and floor aesthetics
+#include <vtkPlaneSource.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkTexture.h>
+#include <vtkSphereSource.h>
+#include <vtkPolyData.h>
+#include <vtkPoints.h>
+#include <vtkCellArray.h>
+#include <vtkHDRReader.h>
+#include <vtkImageFlip.h>
+#include <vtkImageData.h>
+#include <vtkJPEGReader.h>
+#include <vtkTexturedSphereSource.h>
+
+//Live updating VR method https://doc.qt.io/qt-6/qmutexlocker.html (Experimental, but prevents crashing currently)
+#include <QMutexLocker>
+
 
 VRRenderThread::VRRenderThread(QObject* parent)
     : QThread(parent)
@@ -31,14 +53,65 @@ VRRenderThread::VRRenderThread(QObject* parent)
 
 //This code is currently considered experimental
 //Values should be changed to perfectly fit the VR scene to scale the STL properly
+//This function allows actors to be added to the VR scene both before and during VR runtime 
+//EDIT THIS FUNCTION IF CRASHES OCCUR WHEN ADDING ACTORS DURING VR RUNTIME
 void VRRenderThread::addActorOffline(vtkSmartPointer<vtkActor> actor)
 {
-    if (!this->isRunning() && actor)
+    if (!actor)
     {
-        // Do not scale or centre actors individually here.
-        // If each part is centred separately, the CAD assembly loses its correct layout.
+        return;
+    }
+
+    if (!this->isRunning())
+    {
+        // Before VR starts, actors can be added directly to the starting list.
         actors.append(actor);
     }
+    else
+    {
+        // While VR is running, queue actors so the VR thread can add them safely.
+        QMutexLocker locker(&pendingActorsMutex);
+        pendingActors.append(actor);
+    }
+}
+
+void VRRenderThread::toggleExplode()
+{
+    explodeToggleRequested = true;
+}
+
+void VRRenderThread::queueVRPipelineUpdate(ModelPart* part)
+{
+    if (!part)
+        return;
+    QMutexLocker locker(&pendingVRUpdatesMutex);
+    if (!pendingVRUpdates.contains(part))
+        pendingVRUpdates.append(part);
+}
+
+//Animation functions
+void VRRenderThread::setAnimationEnabled(bool enabled)
+{
+    animationEnabled = enabled;
+}
+bool VRRenderThread::animationIsEnabled() const
+{
+    return animationEnabled;
+}
+
+void VRRenderThread::resetView()
+{
+    // Only request the reset here.
+    // The VR thread will apply the actor transforms safely inside its render loop.
+    resetRequested = true;
+}
+
+//This function signals the VR render thread to stop and performs necessary cleanup of VR resources.
+void VRRenderThread::stopVR()
+{
+    // Do not directly call OpenVR/VTK cleanup from the GUI thread.
+    // The VR thread will detect this flag and terminate itself safely.
+    stopRequested = true;
 }
 
 /**
@@ -54,12 +127,36 @@ This function initialises the OpenVR renderer, adds all pre-prepared actors, and
 */
 void VRRenderThread::run()
 {
+
+    stopRequested = false;
+
     vtkNew<vtkNamedColors> colors;
 
     std::array<unsigned char, 4> bkg{ {26, 51, 102, 255} };
     colors->SetColor("BkgColor", bkg.data());
 
     vtkNew<vtkOpenVRRenderer> renderer;
+
+    // Add improved lighting for the VR scene.
+    // A headlight keeps the model visible from the user's viewpoint.
+    vtkNew<vtkLight> headLight;
+    headLight->SetLightTypeToHeadlight();
+    headLight->SetIntensity(0.6);
+    renderer->AddLight(headLight);
+
+    // A scene light adds stronger directional lighting and depth.
+    // This follows the lighting approach suggested in the group task sheet.
+    vtkNew<vtkLight> sceneLight;
+    sceneLight->SetLightTypeToSceneLight();
+    sceneLight->SetPosition(5.0, 5.0, 15.0);
+    sceneLight->SetPositional(true);
+    sceneLight->SetConeAngle(30.0);
+    sceneLight->SetFocalPoint(0.0, 0.0, -2.0);
+    sceneLight->SetDiffuseColor(1.0, 1.0, 1.0);
+    sceneLight->SetAmbientColor(0.6, 0.6, 0.6);
+    sceneLight->SetSpecularColor(1.0, 1.0, 1.0);
+    sceneLight->SetIntensity(0.8);
+    renderer->AddLight(sceneLight);
 
     for (auto actor : actors)
     {
@@ -103,21 +200,38 @@ void VRRenderThread::run()
             hasBounds = true;
         }
     }
+
+    double vrCentreX = 0.0;
+    double vrCentreY = 0.0;
+    double vrZMin    = 0.0;
+    double vrScale   = 1.0;
+    bool hasVRTransform = false;
+
     if (hasBounds)
     {
         double centreX = (globalBounds[0] + globalBounds[1]) / 2.0;
         double centreY = (globalBounds[2] + globalBounds[3]) / 2.0;
-        double centreZ = (globalBounds[4] + globalBounds[5]) / 2.0;
 
         double sizeX = globalBounds[1] - globalBounds[0];
         double sizeY = globalBounds[3] - globalBounds[2];
         double sizeZ = globalBounds[5] - globalBounds[4];
 
+        // The lowest Z across the whole assembly — used to place the model
+        // so its base sits exactly on the floor (world Y = 0).
+        double zMin = globalBounds[4];
+
         double maxSize = std::max(sizeX, std::max(sizeY, sizeZ));
-		// We can change the scale factor here to make the CAD assembly larger or smaller in the VR scene (currently set to 1.5)
         if (maxSize > 0.0)
         {
-            double scale = 1.5 / maxSize;
+            // 0.6 gives a comfortable viewing size — the longest axis of the
+            // assembly becomes 0.6m, which fits fully in view at 2m distance.
+            double scale = 1.8 / maxSize;
+
+            vrCentreX = centreX;
+            vrCentreY = centreY;
+            vrZMin    = zMin;
+            vrScale   = scale;
+            hasVRTransform = true;
 
             for (auto actor : actors)
             {
@@ -125,20 +239,207 @@ void VRRenderThread::run()
                 {
                     continue;
                 }
-				// Scale the actor uniformly
+
                 actor->SetScale(scale, scale, scale);
 
-                // Move whole assembly together, not each part separately
+                // RotateX(-90) converts CAD Z-up to VR Y-up.
+                // After rotation: object-X -> world-X,
+                //                 object-Z -> world-Y,
+                //                 object-Y -> world -Z.
+                // X: centre on world X=0 using centreX.
+                // Y: use zMin (not centreZ) so the model base lands at Y=0,
+                //    not the centroid — otherwise the model is half-buried.
+                // Z: use centreY so the assembly is centred in depth, then
+                //    push 2m in front of the user.
+                actor->RotateX(-90.0);
                 actor->SetPosition(
                     -centreX * scale,
-                    -centreY * scale,
-                    -centreZ * scale - 2.0
+                    -zMin    * scale,
+                     centreY * scale - 2.0
                 );
-
-                // Keep the orientation correction from the example/email
-                actor->RotateX(-90.0);
             }
         }
+    }
+
+    // Store the initial VR transforms after scaling, positioning and orientation correction.
+    // These are used by Reset View to undo animation/rotation changes.
+    originalPositions.clear();
+    originalScales.clear();
+    originalOrientations.clear();
+
+    for (auto actor : actors)
+    {
+        if (!actor)
+        {
+            continue;
+        }
+
+        double position[3];
+        double scale[3];
+        double orientation[3];
+
+        actor->GetPosition(position);
+        actor->GetScale(scale);
+        actor->GetOrientation(orientation);
+
+        originalPositions.append({ position[0], position[1], position[2] });
+        originalScales.append({ scale[0], scale[1], scale[2] });
+        originalOrientations.append({ orientation[0], orientation[1], orientation[2] });
+    }
+
+    // Compute exploded positions — each part moves outward from the assembly centroid.
+    // Direction is from centroid to each part's bounds centre; distance is 0.3m.
+    explodedPositions.clear();
+    {
+        // Find the world-space bounds centre of each actor (geometry centroid after transforms).
+        QList<std::array<double, 3>> boundsCentres;
+        for (auto actor : actors)
+        {
+            if (!actor) continue;
+            double b[6];
+            actor->GetBounds(b);
+            boundsCentres.append({
+                (b[0] + b[1]) * 0.5,
+                (b[2] + b[3]) * 0.5,
+                (b[4] + b[5]) * 0.5
+            });
+        }
+
+        // Assembly centroid = average of all bounds centres.
+        double cx = 0, cy = 0, cz = 0;
+        for (auto& bc : boundsCentres) { cx += bc[0]; cy += bc[1]; cz += bc[2]; }
+        int n = boundsCentres.size();
+        if (n > 0) { cx /= n; cy /= n; cz /= n; }
+
+        // Exploded position = original SetPosition + outward direction * 0.3m.
+        for (int i = 0; i < actors.size() && i < (int)boundsCentres.size(); i++)
+        {
+            double dx = boundsCentres[i][0] - cx;
+            double dy = boundsCentres[i][1] - cy;
+            double dz = boundsCentres[i][2] - cz;
+            double len = std::sqrt(dx*dx + dy*dy + dz*dz);
+            if (len < 0.001) { dx = 0; dy = 1; dz = 0; len = 1; }
+
+            const double explodeDist = 0.3;
+            explodedPositions.append({
+                originalPositions[i][0] + (dx / len) * explodeDist,
+                originalPositions[i][1] + (dy / len) * explodeDist,
+                originalPositions[i][2] + (dz / len) * explodeDist
+            });
+        }
+    }
+
+    // Add a simple floor to make the VR environment more realistic.
+    // This helps avoid the scene appearing as just a plain background colour.
+	// Play around with the floor position and size to best fit the CAD assembly and improve depth perception in VR.
+    vtkNew<vtkPlaneSource> floorSource;
+
+    double floorY = 0.0;
+    floorSource->SetOrigin(-5.0, floorY, -8.0);
+    floorSource->SetPoint1(5.0, floorY, -8.0);
+    floorSource->SetPoint2(-5.0, floorY, 4.0);
+    floorSource->Update();
+
+    vtkNew<vtkPolyDataMapper> floorMapper;
+    floorMapper->SetInputConnection(floorSource->GetOutputPort());
+
+    vtkNew<vtkActor> floorActor;
+    floorActor->SetMapper(floorMapper);
+    floorActor->PickableOff();
+    floorActor->GetProperty()->SetColor(0.35, 0.35, 0.35);
+    floorActor->GetProperty()->SetOpacity(1.0);
+
+
+    renderer->AddActor(floorActor);
+
+    // Grid of lines sitting just above the floor under the car.
+    // The car appears centred at X=0, Z=-2.0, so the grid is centred there.
+    // Y=0.002 is a tiny offset above the floor to prevent z-fighting.
+    {
+        const double gridY      =  0.002;
+        const double gridCentreZ = -2.0;
+        const double halfExtent  =  1.5;   // grid reaches 1.5m either side of centre
+        const double spacing     =  0.1;   // one line every 10cm
+
+        const double xMin = -halfExtent;
+        const double xMax =  halfExtent;
+        const double zMin =  gridCentreZ - halfExtent;
+        const double zMax =  gridCentreZ + halfExtent;
+
+        vtkNew<vtkPolyData>  gridData;
+        vtkNew<vtkPoints>    gridPoints;
+        vtkNew<vtkCellArray> gridLines;
+
+        // Lines running along Z (constant X)
+        for (double x = xMin; x <= xMax + 1e-9; x += spacing)
+        {
+            vtkIdType p0 = gridPoints->InsertNextPoint(x, gridY, zMin);
+            vtkIdType p1 = gridPoints->InsertNextPoint(x, gridY, zMax);
+            vtkIdType pts[2] = { p0, p1 };
+            gridLines->InsertNextCell(2, pts);
+        }
+
+        // Lines running along X (constant Z)
+        for (double z = zMin; z <= zMax + 1e-9; z += spacing)
+        {
+            vtkIdType p0 = gridPoints->InsertNextPoint(xMin, gridY, z);
+            vtkIdType p1 = gridPoints->InsertNextPoint(xMax, gridY, z);
+            vtkIdType pts[2] = { p0, p1 };
+            gridLines->InsertNextCell(2, pts);
+        }
+
+        gridData->SetPoints(gridPoints);
+        gridData->SetLines(gridLines);
+
+        vtkNew<vtkPolyDataMapper> gridMapper;
+        gridMapper->SetInputData(gridData);
+
+        vtkNew<vtkActor> gridActor;
+        gridActor->SetMapper(gridMapper);
+        gridActor->GetProperty()->SetColor(0.8, 0.8, 0.8);
+        gridActor->GetProperty()->SetLineWidth(1.0);
+        gridActor->PickableOff();
+
+        renderer->AddActor(gridActor);
+    }
+
+    // Add a textured environment sphere around the VR scene.
+    // JPG is used instead of HDR to avoid overexposure/tone-mapping issues in OpenVR.
+    {
+        const char* skyboxPath = "Assets/Skybox/empty_warehouse_01_8k.jpg";
+
+        vtkNew<vtkJPEGReader> jpgReader;
+        jpgReader->SetFileName(skyboxPath);
+        jpgReader->Update();
+
+        vtkNew<vtkTexture> skyTexture;
+        skyTexture->SetInputConnection(jpgReader->GetOutputPort());
+        skyTexture->InterpolateOn();
+
+        vtkNew<vtkTexturedSphereSource> skySource;
+        skySource->SetRadius(25.0);
+        skySource->SetThetaResolution(96);
+        skySource->SetPhiResolution(48);
+        // vtkTexturedSphereSource is centred at the origin.
+        // Move the actor slightly instead if needed.
+
+        vtkNew<vtkPolyDataMapper> skyMapper;
+        skyMapper->SetInputConnection(skySource->GetOutputPort());
+
+        vtkNew<vtkActor> skyActor;
+        skyActor->SetMapper(skyMapper);
+        skyActor->SetTexture(skyTexture);
+        skyActor->SetPosition(0.0, 0.0, -2.0);
+        skyActor->RotateX(-90.0);
+
+        // Make the background visible without relying on scene lights.
+        skyActor->GetProperty()->SetAmbient(1.0);
+        skyActor->GetProperty()->SetDiffuse(0.0);
+        skyActor->GetProperty()->SetSpecular(0.0);
+
+        skyActor->PickableOff();
+
+        renderer->AddActor(skyActor);
     }
 
 	// Set a consistent background color for the VR scene
@@ -148,18 +449,201 @@ void VRRenderThread::run()
     vtkNew<vtkOpenVRCamera> cam;
     renderer->SetActiveCamera(cam);
 
-	// Create the VR render window and interactor, and start the rendering loop
-    vtkNew<vtkOpenVRRenderWindow> renderWindow;
-    renderWindow->Initialize();
-    renderWindow->AddRenderer(renderer);
-    renderWindow->SetWindowName("Group8 CAD VR");
+    // Create the VR render window and interactor, and start the rendering loop
+    vrRenderWindow = vtkSmartPointer<vtkOpenVRRenderWindow>::New();
+    vrRenderWindow->Initialize();
+    vrRenderWindow->AddRenderer(renderer);
+    vrRenderWindow->SetWindowName("Group8 CAD VR");
 
-	// The interactor will handle user input and allow for real-time interaction with the VR scene
-    vtkNew<vtkOpenVRRenderWindowInteractor> renderWindowInteractor;
-    renderWindowInteractor->SetRenderWindow(renderWindow);
-    renderWindowInteractor->Initialize();
+    vrInteractor = vtkSmartPointer<vtkOpenVRRenderWindowInteractor>::New();
+    vrInteractor->SetRenderWindow(vrRenderWindow);
 
-	// Start the VR rendering loop. This will keep the VR scene responsive and allow for user interaction until the interactor is stopped.
-    renderWindow->Render();
-    renderWindowInteractor->Start();
+    // Tell VTK/OpenVR where the SteamVR action manifest is.
+    // The JSON file must be copied next to the executable.
+    vrInteractor->SetActionManifestFileName("vrbindings/vtk_openvr_actions.json");
+
+    vrInteractor->Initialize();
+
+    // Run our own VR loop instead of using vrInteractor->Start().
+    // This allows the Stop VR button to end the loop safely.
+    while (!stopRequested)
+    {
+        if (vrInteractor)
+        {
+            vrInteractor->ProcessEvents();
+        }
+
+        // Add any STL actors that were loaded while VR is already running.
+        // This is done inside the VR thread to avoid cross-thread VTK/OpenVR crashes.
+        QList<vtkSmartPointer<vtkActor>> actorsToAdd;
+
+        {
+            QMutexLocker locker(&pendingActorsMutex);
+            actorsToAdd = pendingActors;
+            pendingActors.clear();
+        }
+
+        for (auto actor : actorsToAdd)
+        {
+            if (!actor)
+            {
+                continue;
+            }
+
+            // Apply the same VR transform as the original loaded assembly.
+            if (hasVRTransform)
+            {
+                actor->SetScale(vrScale, vrScale, vrScale);
+                actor->RotateX(-90.0);
+                actor->SetPosition(
+                    -vrCentreX * vrScale,
+                    -vrZMin    * vrScale,
+                     vrCentreY * vrScale - 2.0
+                );
+            }
+
+            actors.append(actor);
+
+            double position[3];
+            double scale[3];
+            double orientation[3];
+
+            actor->GetPosition(position);
+            actor->GetScale(scale);
+            actor->GetOrientation(orientation);
+
+            originalPositions.append({ position[0], position[1], position[2] });
+            originalScales.append({ scale[0], scale[1], scale[2] });
+            originalOrientations.append({ orientation[0], orientation[1], orientation[2] });
+
+            renderer->AddActor(actor);
+        }
+
+        // Apply filter/property updates queued by the GUI thread.
+        // Called here (inside VR thread) so VTK objects are only modified from one thread.
+        {
+            QList<ModelPart*> updatesToProcess;
+            {
+                QMutexLocker locker(&pendingVRUpdatesMutex);
+                updatesToProcess = pendingVRUpdates;
+                pendingVRUpdates.clear();
+            }
+            for (auto part : updatesToProcess)
+            {
+                if (part)
+                    part->updateVRPipeline();
+            }
+        }
+
+        // Explode toggle — flip direction when requested.
+        if (explodeToggleRequested.exchange(false))
+        {
+            explodeActive = !explodeActive;
+        }
+
+        // Animate explode progress toward 1.0 (exploded) or 0.0 (assembled).
+        {
+            double target = explodeActive ? 1.0 : 0.0;
+            if (explodeProgress != target)
+            {
+                explodeProgress += explodeActive ? 0.02 : -0.02;
+                explodeProgress = std::max(0.0, std::min(1.0, explodeProgress));
+
+                int count = std::min({ (int)actors.size(),
+                                       (int)originalPositions.size(),
+                                       (int)explodedPositions.size() });
+                for (int i = 0; i < count; i++)
+                {
+                    if (!actors[i]) continue;
+                    actors[i]->SetPosition(
+                        originalPositions[i][0] + (explodedPositions[i][0] - originalPositions[i][0]) * explodeProgress,
+                        originalPositions[i][1] + (explodedPositions[i][1] - originalPositions[i][1]) * explodeProgress,
+                        originalPositions[i][2] + (explodedPositions[i][2] - originalPositions[i][2]) * explodeProgress
+                    );
+                    actors[i]->Modified();
+                }
+            }
+        }
+
+        // Reset model actors back to their original VR transforms.
+        // This is handled inside the VR thread to avoid cross-thread VTK issues.
+        if (resetRequested.exchange(false))
+        {
+            animationEnabled = false;
+            explodeActive    = false;
+            explodeProgress  = 0.0;
+
+            int count = std::min(
+                actors.size(),
+                std::min(originalPositions.size(),
+                    std::min(originalScales.size(), originalOrientations.size()))
+            );
+
+            for (int i = 0; i < count; i++)
+            {
+                vtkActor* actor = actors[i];
+
+                if (!actor)
+                {
+                    continue;
+                }
+
+                actor->SetPosition(
+                    originalPositions[i][0],
+                    originalPositions[i][1],
+                    originalPositions[i][2]
+                );
+
+                actor->SetScale(
+                    originalScales[i][0],
+                    originalScales[i][1],
+                    originalScales[i][2]
+                );
+
+                actor->SetOrientation(
+                    originalOrientations[i][0],
+                    originalOrientations[i][1],
+                    originalOrientations[i][2]
+                );
+
+                actor->Modified();
+            }
+        }
+
+        // Simple turntable animation for the loaded CAD model.
+        // Only actors in the actors list are animated, so the floor and sky sphere stay still.
+        if (animationEnabled)
+        {
+            for (auto actor : actors)
+            {
+                if (actor)
+                {
+                    actor->RotateY(0.6);
+                    actor->Modified();
+                }
+            }
+        }
+
+        if (vrRenderWindow)
+        {
+            vrRenderWindow->Render();
+        }
+
+        QThread::msleep(10);
+    }
+
+    // Cleanup after the VR loop exits.
+    if (vrInteractor)
+    {
+        vrInteractor->TerminateApp();
+    }
+
+    if (vrRenderWindow)
+    {
+        vrRenderWindow->Finalize();
+    }
+
+    vrInteractor = nullptr;
+    vrRenderWindow = nullptr;
+
 }

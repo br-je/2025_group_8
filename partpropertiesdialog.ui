@@ -6,18 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>462</width>
-    <height>330</height>
+    <width>442</width>
+    <height>371</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Edit Properties</string>
   </property>
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
      <x>140</x>
-     <y>290</y>
+     <y>330</y>
      <width>161</width>
      <height>32</height>
     </rect>
@@ -62,46 +62,20 @@
     </rect>
    </property>
    <property name="text">
-    <string>Colour (RGB)</string>
+    <string>Colour</string>
    </property>
   </widget>
-  <widget class="QSpinBox" name="redSpinBox">
+  <widget class="QPushButton" name="colorButton">
    <property name="geometry">
     <rect>
      <x>120</x>
-     <y>70</y>
-     <width>81</width>
-     <height>22</height>
+     <y>63</y>
+     <width>291</width>
+     <height>30</height>
     </rect>
    </property>
-   <property name="maximum">
-    <number>255</number>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="greenSpinBox">
-   <property name="geometry">
-    <rect>
-     <x>210</x>
-     <y>70</y>
-     <width>91</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="maximum">
-    <number>255</number>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="blueSpinBox">
-   <property name="geometry">
-    <rect>
-     <x>310</x>
-     <y>70</y>
-     <width>81</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="maximum">
-    <number>255</number>
+   <property name="text">
+    <string>Choose Colour...</string>
    </property>
   </widget>
   <widget class="QCheckBox" name="visibleCheckBox">
@@ -255,6 +229,19 @@
    </property>
    <property name="text">
     <string>Invert Clip</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="removeSelected">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>270</y>
+     <width>361</width>
+     <height>29</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Remove Item</string>
    </property>
   </widget>
  </widget>

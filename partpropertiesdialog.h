@@ -8,6 +8,7 @@
 #define PARTPROPERTIESDIALOG_H
 
 #include <QDialog>
+#include <QColor>
 #include "ModelPart.h"
 
 namespace Ui {
@@ -42,6 +43,7 @@ public:
      * @param part Pointer to the ModelPart
      */
     void setModelPart(ModelPart *part);
+    bool removalRequested() const;
 
 protected:
 
@@ -52,6 +54,10 @@ protected:
      */
     void accept() override;
 
+private slots:
+    void requestRemove();
+    void onColorButtonClicked();
+
 private:
 
     /** Pointer to the UI components of the dialog */
@@ -59,6 +65,10 @@ private:
 
     /** Pointer to the currently selected model part */
     ModelPart *currentPart;
+    bool removeItemRequested;
+    QColor selectedColor;
+
+    void updateColorButton();
 };
 
 #endif // PARTPROPERTIESDIALOG_H

@@ -95,11 +95,11 @@ private slots:
      * @brief Starts the VR rendering thread.
      */
     void startVR();
-
-    /**
-     * @brief Opens a folder and loads STL files from it.
-     */
+    void stopVR();
     void on_actionOpen_Folder_triggered();
+
+public slots:
+    void handleClearSelection();
 
 private:
 
@@ -154,6 +154,9 @@ private:
      * @param parentPart Parent model part whose properties should be copied.
      */
     void applyPropertiesToChildren(ModelPart* parentPart);
+    bool vrAnimationEnabled = false;
+    void addPartToLiveVR(ModelPart* part);
+    void queueVRUpdatesFromTree(const QModelIndex& index);
 };
 
 #endif // MAINWINDOW_H

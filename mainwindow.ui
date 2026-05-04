@@ -11,7 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Group 8 CAD Viewer</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="icons.qrc">
+    <normaloff>:/Icons/Icons/app_icon.png</normaloff>:/Icons/Icons/app_icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -38,9 +42,22 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="StopVRButton">
+        <property name="text">
+         <string>Stop VR</string>
+        </property>
+        <property name="icon">
+         <iconset theme="QIcon::ThemeIcon::MediaPlaybackStop"/>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="ClearSelectionButton">
         <property name="text">
-         <string>Clear</string>
+         <string>Clear Selection</string>
+        </property>
+        <property name="icon">
+         <iconset theme="QIcon::ThemeIcon::ApplicationExit"/>
         </property>
        </widget>
       </item>
@@ -49,12 +66,28 @@
         <property name="text">
          <string>Reset View</string>
         </property>
+        <property name="icon">
+         <iconset theme="QIcon::ThemeIcon::SyncSynchronizing"/>
+        </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="pushButton">
         <property name="text">
-         <string>PushButton</string>
+         <string>Spin (VR)</string>
+        </property>
+        <property name="icon">
+         <iconset theme="QIcon::ThemeIcon::EditRedo"/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="explodeButton">
+        <property name="text">
+         <string>Explode (VR)</string>
+        </property>
+        <property name="icon">
+         <iconset theme="QIcon::ThemeIcon::ViewFullscreen"/>
         </property>
        </widget>
       </item>

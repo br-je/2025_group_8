@@ -151,6 +151,20 @@ public:
      */
     bool removeChild(int row);
 
+	// Shrink filter for VR rendering
+    void setShrinkFilter(bool enabled, double factor);
+    bool shrinkFilterEnabled() const;
+    double shrinkFactor() const;
+    void updatePipeline();
+    void updateVRPipeline();
+
+	// Clip filter for VR rendering
+    void setClipFilter(bool enabled, int axis, double value, bool invert);
+    bool clipFilterEnabled() const;
+    int clipAxis() const;
+    double clipValue() const;
+    bool clipInvert() const;
+
 private:
 
     /** Child items stored below this model part in the tree. */
@@ -173,18 +187,32 @@ private:
 
     /** Blue colour component from 0 to 255. */
     unsigned char colourB;
+	
+	/* These are vtk properties that will be used to load/render a model of this part,
+	 * commented out for now but will be used later
+	 */
+    vtkSmartPointer<vtkSTLReader>               file;               /**< Datafile from which part loaded */
+    vtkSmartPointer<vtkMapper>                  mapper;             /**< Mapper for rendering */
+    vtkSmartPointer<vtkActor>                   actor;              /**< Actor for rendering */
+    vtkSmartPointer<vtkActor>                   vrActor;            /**< Separate actor used for VR rendering */
+    vtkColor3<unsigned char>                    colour;             /**< User defineable colour */
 
-    /** Reader used to load the STL file. */
-    vtkSmartPointer<vtkSTLReader> file;
+	// Shrink filter for VR rendering
+    bool applyShrinkFilter;
+    double shrinkFilterFactor;
+    vtkSmartPointer<vtkShrinkFilter> shrinkFilter;
 
-    /** Mapper used to connect STL data to the actor. */
-    vtkSmartPointer<vtkMapper> mapper;
+	// Clip filter for VR rendering
+    bool applyClipFilter;
+    int clipFilterAxis;
+    double clipFilterValue;
+    bool invertClipFilter;
+    vtkSmartPointer<vtkClipDataSet> clipFilter;
+    vtkSmartPointer<vtkPlane> clipPlane;
+    vtkSmartPointer<vtkDataSetMapper> vrMapper;
+    vtkSmartPointer<vtkDataSet> vrFilteredData;
 
-    /** Actor used to display the model part in the scene. */
-    vtkSmartPointer<vtkActor> actor;
+};  
 
-    /** VTK colour value used for rendering the part. */
-    vtkColor3<unsigned char> colour;
-};
 
 #endif
