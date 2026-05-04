@@ -95,7 +95,14 @@ private slots:
      * @brief Starts the VR rendering thread.
      */
     void startVR();
+
+    /**
+    * @brief Stops the VR rendering thread.
+    */
     void stopVR();
+    /**
+    * @brief Opens a folder and loads STL files into the model tree.
+    */
     void on_actionOpen_Folder_triggered();
 
 public slots:
@@ -154,8 +161,20 @@ private:
      * @param parentPart Parent model part whose properties should be copied.
      */
     void applyPropertiesToChildren(ModelPart* parentPart);
+
+    /** Indicates whether VR animation mode is enabled. */
     bool vrAnimationEnabled = false;
+
+    /**
+    * @brief Adds a model part to the active VR scene.
+    * @param part Model part to be added.
+    */
     void addPartToLiveVR(ModelPart* part);
+
+    /**
+    * @brief Queues updates for VR rendering based on the model tree.
+    * @param index Starting index for processing model parts.
+    */
     void queueVRUpdatesFromTree(const QModelIndex& index);
 };
 
