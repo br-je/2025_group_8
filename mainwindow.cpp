@@ -135,6 +135,25 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->explodeButton, &QPushButton::released,
         this, &MainWindow::toggleExplode);
+
+    connect(ui->actionHelp, &QAction::triggered, this, [this]() {
+        QMessageBox::about(
+            this,
+            "About Group 8 CAD Viewer",
+            "Group 8 CAD Viewer\n\n"
+            "Version: v1.1.1\n"
+            "Qt + VTK + OpenVR CAD viewer\n\n"
+            "Quick Help:\n"
+            "- Load STL models using the toolbar or File menu.\n"
+            "- Start SteamVR before clicking Start VR.\n"
+            "- Use the GUI to change colour, visibility and filters.\n\n"
+            "Features:\n"
+            "- STL loading and recursive folder loading\n"
+            "- Live colour, visibility and filter updates\n"
+            "- VR rendering with controller interaction\n"
+            "- Animation, explode view and warehouse environment"
+        );
+        });
 }
 
 MainWindow::~MainWindow()

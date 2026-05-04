@@ -115,7 +115,7 @@ QSplitter::handle:hover {
     <item>
      <widget class="QSplitter" name="splitter">
       <property name="orientation">
-       <enum>Qt::Horizontal</enum>
+       <enum>Qt::Orientation::Horizontal</enum>
       </property>
       <widget class="QTreeView" name="treeView"/>
       <widget class="QVTKOpenGLNativeWidget" name="vtkWidget" native="true"/>
@@ -206,7 +206,7 @@ QSplitter::handle:hover {
      <x>0</x>
      <y>0</y>
      <width>1100</width>
-     <height>26</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -237,7 +237,7 @@ QSplitter::handle:hover {
   <action name="actionOpen_File">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Icons/Icons/fileopen.png</normaloff>:/Icons/Icons/fileopen.png</iconset>
+     <normaloff>:/Icons/Icons/stlopen.png</normaloff>:/Icons/Icons/stlopen.png</iconset>
    </property>
    <property name="text">
     <string>Open STL File</string>
