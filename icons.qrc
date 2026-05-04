@@ -4,5 +4,6 @@
         <file>Icons/help.png</file>
         <file>Icons/print.png</file>
         <file>Icons/app_icon.png</file>
+        <file>Icons/stlopen.png</file>
     </qresource>
 </RCC>

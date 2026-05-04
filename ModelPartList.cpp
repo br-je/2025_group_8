@@ -46,9 +46,17 @@ QVariant ModelPartList::data( const QModelIndex& index, int role ) const {
     /* Get a a pointer to the item referred to by the QModelIndex */
     ModelPart* item = static_cast<ModelPart*>( index.internalPointer() );
 
-    /* Each item in the tree has a number of columns ("Part" and "Visible" in this 
+    /* Each item in the tree has a number of columns ("Part" and "Visible" in this
      * initial example) return the column requested by the QModelIndex */
-    return item->data( index.column() );
+    QVariant value = item->data( index.column() );
+
+    if (index.column() == 1) {
+        QString str = value.toString();
+        if (str == "true")  return QString("Yes");
+        if (str == "false") return QString("No");
+    }
+
+    return value;
 }
 
 

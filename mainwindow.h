@@ -27,11 +27,8 @@ public:
     ~MainWindow();
 
 public slots:
-    void handleButton1();
-
-public slots:
     void handleTreeClicked(const QModelIndex &index);
-    
+    void handleClearSelection();
 
 private slots:
     void openContextMenu(const QPoint &pos);
@@ -43,9 +40,6 @@ private slots:
     void toggleVRAnimation();
     void resetModelView();
     void toggleExplode();
-
-public slots:
-    void handleClearSelection();
 
 private:
     Ui::MainWindow *ui;

@@ -3,6 +3,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QHeaderView>
 #include "PartPropertiesDialog.h"
 
 #include <vtkGenericOpenGLRenderWindow.h>
@@ -33,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Add a renderer
     renderer = vtkSmartPointer<vtkRenderer>::New();
+    renderer->SetBackground(0.15, 0.15, 0.15);
     renderWindow->AddRenderer(renderer);
 
     // Create an object and add to renderer (temporary test geometry)
@@ -64,7 +66,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Attach model to tree view
     ui->treeView->setModel(this->partList);
-    #include <QHeaderView>
 
     ui->treeView->header()->setStretchLastSection(false);
 
@@ -113,15 +114,14 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, &MainWindow::statusUpdateMessage,
             ui->statusbar, &QStatusBar::showMessage);
 
-    connect(ui->pushButton, &QPushButton::released,
+    connect(ui->animationButton, &QPushButton::released,
         this, &MainWindow::toggleVRAnimation);
 
-    ui->pushButton->setText("Start Animation");
+    ui->animationButton->setText("Start Animation");
 
     connect(ui->ClearSelectionButton, &QPushButton::released,
             this, &MainWindow::handleClearSelection);
 
-	// Initialize VR thread pointer (EXPERIMENTAL - will be used in future VR implementation)
     vrThread = nullptr;
 
     connect(ui->StartVRButton, &QPushButton::released,
@@ -135,17 +135,30 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->explodeButton, &QPushButton::released,
         this, &MainWindow::toggleExplode);
+
+    connect(ui->actionHelp, &QAction::triggered, this, [this]() {
+        QMessageBox::about(
+            this,
+            "About Group 8 CAD Viewer",
+            "Group 8 CAD Viewer\n\n"
+            "Version: v1.1.1\n"
+            "Qt + VTK + OpenVR CAD viewer\n\n"
+            "Quick Help:\n"
+            "- Load STL models using the toolbar or File menu.\n"
+            "- Start SteamVR before clicking Start VR.\n"
+            "- Use the GUI to change colour, visibility and filters.\n\n"
+            "Features:\n"
+            "- STL loading and recursive folder loading\n"
+            "- Live colour, visibility and filter updates\n"
+            "- VR rendering with controller interaction\n"
+            "- Animation, explode view and warehouse environment"
+        );
+        });
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-}
-
-void MainWindow::handleButton1()
-{
-    updateRender();
-    emit statusUpdateMessage("Button 1 clicked", 3000);
 }
 
 void MainWindow::handleTreeClicked(const QModelIndex &index)
@@ -265,7 +278,7 @@ void MainWindow::toggleVRAnimation()
         vrThread->setAnimationEnabled(vrAnimationEnabled);
     }
 
-    ui->pushButton->setText(vrAnimationEnabled ? "Stop Animation" : "Start Animation");
+    ui->animationButton->setText(vrAnimationEnabled ? "Stop Animation" : "Start Animation");
 
     emit statusUpdateMessage(
         vrAnimationEnabled ? "VR animation enabled" : "VR animation disabled",
@@ -277,7 +290,7 @@ void MainWindow::resetModelView()
 {
     // Stop animation so the model stays at the reset position.
     vrAnimationEnabled = false;
-    ui->pushButton->setText("Start Animation");
+    ui->animationButton->setText("Start Animation");
 
     if (vrThread && vrThread->isRunning())
     {
@@ -491,7 +504,6 @@ void MainWindow::removeSelectedItem()
     }
 }
 
-//MAIN VR FUNCTION (EXPERIMENTAL - will be used in future VR implementation)
 int MainWindow::addVRActorsFromTree(const QModelIndex& index, VRRenderThread* thread)
 {
     int actorCount = 0;
