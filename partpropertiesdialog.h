@@ -43,6 +43,11 @@ public:
      * @param part Pointer to the ModelPart
      */
     void setModelPart(ModelPart *part);
+
+     /**
+     * @brief Checks whether the user requested removal of the model part.
+     * @return True if removal was requested.
+     */
     bool removalRequested() const;
 
 protected:
@@ -55,7 +60,14 @@ protected:
     void accept() override;
 
 private slots:
+     /**
+     * @brief Slot triggered when the user requests to remove the model part.
+     */
     void requestRemove();
+
+      /**
+      * @brief Opens a colour picker to select a new part colour.
+      */
     void onColorButtonClicked();
 
 private:
@@ -65,9 +77,16 @@ private:
 
     /** Pointer to the currently selected model part */
     ModelPart *currentPart;
+
+    /** Stores whether the user has requested removal of the model part. */
     bool removeItemRequested;
+
+    /** Stores the currently selected colour for the model part. */
     QColor selectedColor;
 
+    /**
+    * @brief Updates the colour button to reflect the selected colour.
+    */
     void updateColorButton();
 };
 
