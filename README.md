@@ -2,7 +2,7 @@
 
 ## Group Members
 
-- Bruce Jennings (20581042)
+- Bruce (20581042)
 - Simon (20672184)
 - James (20723145)
 - Priya (20552722)
