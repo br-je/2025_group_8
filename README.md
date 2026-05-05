@@ -99,7 +99,7 @@ The installer includes the runtime files required to run the application, includ
 - VTK runtime DLLs
 - OpenVR runtime DLL
 - VR bindings
-- - Required asset folders
+- Required asset folders
 - The `Group8_CAD_VR.exe` application
 
 This means the installed application should run without requiring Qt, VTK, or OpenVR to be added to the system PATH.
@@ -212,7 +212,7 @@ The current VR environment is generated in code using:
 
 - A floor plane for spatial reference
 - Improved scene lighting
-- A simple environment around the VR scene
+- A warehouse-style panorama image used as the VR environment sphere texture
 
 Optional future assets, such as a textured skybox or panorama image, could be stored in an `Assets/Skybox` folder.
 
