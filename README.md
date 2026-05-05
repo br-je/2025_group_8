@@ -99,7 +99,7 @@ The installer includes the runtime files required to run the application, includ
 - VTK runtime DLLs
 - OpenVR runtime DLL
 - VR bindings
-- - Required asset folders
+- Required asset folders
 - The `Group8_CAD_VR.exe` application
 
 This means the installed application should run without requiring Qt, VTK, or OpenVR to be added to the system PATH.
@@ -208,22 +208,20 @@ Update the paths in `CMakeLists.txt` to match your system:
 
 ## Assets
 
-The current VR environment is generated in code using:
+The VR environment includes the following assets stored in the `Assets/Skybox` folder:
 
-- A floor plane for spatial reference
-- Improved scene lighting
-- A simple environment around the VR scene
+- A warehouse-style panorama image used as the VR environment sphere texture
+- The image is copied into the build output folder automatically by CMake
 
-Optional future assets, such as a textured skybox or panorama image, could be stored in an `Assets/Skybox` folder.
+The floor plane and scene lighting are generated in code and do not require external assets.
 
 ---
 
 ## Notes
 
-- Do not commit build folders or dependencies
-- Do not commit machine-specific paths in `CMakeLists.txt`.
+- Do not commit machine-specific paths in `CMakeLists.txt`
 - Use branches for all changes
 - Ensure Release build works before merging
 - Avoid modifying VRRenderThread on main without VR testing
-- Avoid committing build folders, binaries, or large dependency folders.
-- Commit IDs and final installer releases should be clearly recorded for submission.
+- Avoid committing build folders, binaries, or large dependency folders
+- Commit IDs and final installer releases should be clearly recorded for submission
