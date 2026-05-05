@@ -158,9 +158,9 @@ private:
      * want to add you own.
      */
     bool                                        isVisible;          /**< True/false to indicate if should be visible in model rendering */
-    unsigned char colourR;
-    unsigned char colourG;
-    unsigned char colourB;
+    unsigned char colourR;   /**< Red component of the part colour (0-255) */
+    unsigned char colourG;   /**< Green component of the part colour (0-255) */
+    unsigned char colourB;   /**< Blue component of the part colour (0-255) */
 	
 	/* These are vtk properties that will be used to load/render a model of this part,
 	 * commented out for now but will be used later
@@ -172,15 +172,15 @@ private:
     vtkColor3<unsigned char>                    colour;             /**< User defineable colour */
 
 	// Shrink filter for VR rendering
-    bool applyShrinkFilter;
-    double shrinkFilterFactor;
+    bool applyShrinkFilter;     /**< True/false to indicate if the shrink filter should be applied */
+    double shrinkFilterFactor;  /**< Factor controlling how much the shrink filter compresses the part (0.0 to 1.0) */
     vtkSmartPointer<vtkShrinkFilter> shrinkFilter;
 
 	// Clip filter for VR rendering
-    bool applyClipFilter;
-    int clipFilterAxis;
-    double clipFilterValue;
-    bool invertClipFilter;
+    bool applyClipFilter;    /**< True/false to indicate if the clip filter should be applied */
+    int clipFilterAxis;      /**< Axis to clip along - 0 for X, 1 for Y, 2 for Z */
+    double clipFilterValue;  /**< Position along the chosen axis at which the clip is applied */
+    bool invertClipFilter;   /**< True/false to indicate if the clip direction should be inverted */
     vtkSmartPointer<vtkClipDataSet> clipFilter;
     vtkSmartPointer<vtkPlane> clipPlane;
     vtkSmartPointer<vtkDataSetMapper> vrMapper;

@@ -91,7 +91,10 @@ public:
       */
     ModelPart* getRootItem();
 
-    /**
+    /** Append a new child item to the given parent node in the tree.
+      * @param parent is the index of the parent item to add under
+      * @param data is a list of column values for the new item (name and visibility)
+      * @return the QModelIndex of the newly created item
       */
     QModelIndex appendChild( QModelIndex& parent, const QList<QVariant>& data );
 
