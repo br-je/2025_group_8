@@ -4,7 +4,7 @@
 
 - Bruce Jennings (20581042)
 - Simon (StudentID)
-- James (StudentID)
+- James (20723145)
 - Priya (StudentID)
 
 ---
@@ -215,16 +215,6 @@ The current VR environment is generated in code using:
 - A simple environment around the VR scene
 
 Optional future assets, such as a textured skybox or panorama image, could be stored in an `Assets/Skybox` folder.
-
----
-
-## Next Tasks
-
-- Final Doxygen polish
-- Final demo preparation
-- Verify installer matches final build
-- Optional: controller interaction (branch only)
-- Optional: minor UI polish
 
 ---
 
