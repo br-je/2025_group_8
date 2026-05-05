@@ -1,5 +1,11 @@
-//This is the adaptation of the VRTK Demo program.
-//It currently works using the "Start VR button" in the main window
+/**     @file VRRenderThread.cpp
+  *
+  *     EEEE2076 - Software Engineering & VR Project
+  *
+  *     Manages VR rendering in a separate thread so that the
+  *     main GUI remains responsive during VR operation.
+  */
+
 #include "VRRenderThread.h"
 
 #include <vtkActor.h>
@@ -44,10 +50,9 @@ VRRenderThread::VRRenderThread(QObject* parent)
 {
 }
 
-//This code is currently considered experimental
-//Values should be changed to perfectly fit the VR scene to scale the STL properly
-//This function allows actors to be added to the VR scene both before and during VR runtime 
-//EDIT THIS FUNCTION IF CRASHES OCCUR WHEN ADDING ACTORS DURING VR RUNTIME
+/* Add an actor to the VR scene either before or after the VR loop has started.
+ * If VR is already running the actor is queued so the VR thread can add it safely.
+ */
 void VRRenderThread::addActorOffline(vtkSmartPointer<vtkActor> actor)
 {
     if (!actor)
@@ -82,7 +87,8 @@ void VRRenderThread::queueVRPipelineUpdate(ModelPart* part)
         pendingVRUpdates.append(part);
 }
 
-//Animation functions
+/* Enable or disable the turntable animation for the loaded CAD model.
+ */
 void VRRenderThread::setAnimationEnabled(bool enabled)
 {
     animationEnabled = enabled;
@@ -99,7 +105,9 @@ void VRRenderThread::resetView()
     resetRequested = true;
 }
 
-//This function signals the VR render thread to stop and performs necessary cleanup of VR resources.
+/* Signal the VR render loop to stop.
+ * Cleanup of VR resources is handled inside the VR thread to avoid cross-thread crashes.
+ */
 void VRRenderThread::stopVR()
 {
     // Do not directly call OpenVR/VTK cleanup from the GUI thread.
@@ -107,17 +115,10 @@ void VRRenderThread::stopVR()
     stopRequested = true;
 }
 
-/**
-This function initialises the OpenVR renderer, adds all pre-prepared actors, and continuously updates the VR scene until stopped.
- Key steps:
- - Create VR renderer and interactor
- - Add all actors generated from ModelParts
- - Compute a global bounding box to correctly scale and centre the full CAD assembly
- - Apply consistent transformations to preserve relative positioning of parts
- - Enter render loop to allow real-time interaction
-
- The thread runs independently from the Qt GUI to ensure responsive VR rendering.
-*/
+/* Main VR render loop - initialises the OpenVR renderer, adds all pre-loaded actors,
+ * scales and centres the assembly to fit the VR scene, then loops until stopVR() is called.
+ * Handles live actor additions, filter updates, explode animation, and turntable rotation.
+ */
 void VRRenderThread::run()
 {
 
