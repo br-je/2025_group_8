@@ -3,9 +3,9 @@
 ## Group Members
 
 - Bruce Jennings (20581042)
-- Simon (StudentID)
+- Simon (20672184)
 - James (20723145)
-- Priya (StudentID)
+- Priya (20552722)
 
 ---
 
