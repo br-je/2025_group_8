@@ -103,6 +103,8 @@ void ModelPart::set(int column, const QVariant &value) {
 
 
 ModelPart* ModelPart::parentItem() {
+    /* Return pointer to the parent item of this part.
+     */
     return m_parentItem;
 }
 
@@ -115,8 +117,8 @@ int ModelPart::row() const {
     return 0;
 }
 
-//This function sets the colour of the part, and updates the colour of the actor if it exists.
-//Formaly a placeholder, but now fully functional.
+/* Set the colour of the part and update the actor immediately if one exists.
+ */
 void ModelPart::setColour(const unsigned char R, const unsigned char G, const unsigned char B) {
     colourR = R;
     colourG = G;
@@ -129,22 +131,19 @@ void ModelPart::setColour(const unsigned char R, const unsigned char G, const un
 }
 
 unsigned char ModelPart::getColourR() {
-    //was placeholder
     return colourR;
 }
 
 unsigned char ModelPart::getColourG() {
-    //was placeholder
     return colourG;
 }
 
-
 unsigned char ModelPart::getColourB() {
-    //was placeholder
     return colourB;
 }
 
-//Was placeholder, changed to work with vr rendering.
+/* Set visibility of the part and apply it to both the GUI and VR actor immediately.
+ */
 void ModelPart::setVisible(bool visibleState)
 {
     isVisible = visibleState;
@@ -166,14 +165,12 @@ void ModelPart::setVisible(bool visibleState)
 }
 
 bool ModelPart::visible() {
-    //was placeholder
     return isVisible;
 }
 
-//This function updates the VTK pipeline based on the current settings for the shrink and clip filters.
-// It checks if the file and mapper are valid, then applies the shrink filter if enabled,
-// followed by the clip filter if enabled. Finally, it updates the mapper's input connection to reflect the changes in the pipeline,
-// and marks the actor as modified to ensure it is re-rendered with the updated pipeline.
+/* Rebuild the VTK pipeline using the current shrink and clip filter settings.
+ * Called whenever filter settings change so the GUI renderer reflects the update.
+ */
 void ModelPart::updatePipeline()
 {
     if (!file || !mapper)
@@ -579,32 +576,4 @@ vtkSmartPointer<vtkActor> ModelPart::getNewActor()
     return newActor;
 }
 
-//THE FOLLOWING COMMENTS ARE IN CASE THE PREVIOUS FUNCTIONS ARE NOT WORKING.
-//
-//vtkActor* ModelPart::getNewActor() {
-    /* This is a placeholder function that you will need to modify if you want to use it
-     * 
-     * The default mapper/actor combination can only be used to render the part in 
-     * the GUI, it CANNOT also be used to render the part in VR. This means you need
-     * to create a second mapper/actor combination for use in VR - that is the role
-     * of this function. */
-     
-     
-     /* 1. Create new mapper */
-     
-     /* 2. Create new actor and link to mapper */
-     
-     /* 3. Link the vtkProperties of the original actor to the new actor. This means 
-      *    if you change properties of the original part (colour, position, etc), the
-      *    changes will be reflected in the GUI AND VR rendering.
-      *    
-      *    See the vtkActor documentation, particularly the GetProperty() and SetProperty()
-      *    functions.
-      */
-    
-
-    /* The new vtkActor pointer must be returned here */
-//    return nullptr;
-    
-//}
 

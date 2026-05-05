@@ -176,6 +176,8 @@ void MainWindow::handleTreeClicked(const QModelIndex &index)
     emit statusUpdateMessage("Selected item: " + name, 0);
 }
 
+/* Open a file dialog and load a single STL file into the model tree.
+ */
 void MainWindow::on_actionOpen_File_triggered()
 {
     QString fileName = QFileDialog::getOpenFileName(
@@ -213,6 +215,8 @@ void MainWindow::on_actionOpen_File_triggered()
     emit statusUpdateMessage("Loaded STL file: " + info.fileName(), 3000);
 }
 
+/* Open a folder dialog and recursively load all STL files found inside.
+ */
 void MainWindow::on_actionOpen_Folder_triggered()
 {
     QString dirPath = QFileDialog::getExistingDirectory(
@@ -249,6 +253,8 @@ void MainWindow::on_actionOpen_Folder_triggered()
     );
 }
 
+/* Add a single part's VR actor to the running VR scene if VR is already active.
+ */
 void MainWindow::addPartToLiveVR(ModelPart* part)
 {
     if (!part)
@@ -269,6 +275,8 @@ void MainWindow::addPartToLiveVR(ModelPart* part)
     }
 }
 
+/* Toggle the VR turntable animation on or off and update the button label to match.
+ */
 void MainWindow::toggleVRAnimation()
 {
     vrAnimationEnabled = !vrAnimationEnabled;
@@ -319,6 +327,9 @@ void MainWindow::resetModelView()
     emit statusUpdateMessage("Model view reset", 3000);
 }
 
+/* Request the VR thread to toggle the explode animation.
+ * Does nothing if VR is not currently running.
+ */
 void MainWindow::toggleExplode()
 {
     if (!vrThread || !vrThread->isRunning())
@@ -427,6 +438,8 @@ void MainWindow::applyPropertiesToChildren(ModelPart* parentPart)
     }
 }
 
+/* Clear the renderer and rebuild the scene from the current model tree.
+ */
 void MainWindow::updateRender()
 {
     renderer->RemoveAllViewProps();
@@ -438,6 +451,8 @@ void MainWindow::updateRender()
     renderWindow->Render();
 }
 
+/* Walk the model tree from the given index and add each visible part's actor to the renderer.
+ */
 void MainWindow::updateRenderFromTree(const QModelIndex& index)
 {
     if (index.isValid())
@@ -464,6 +479,8 @@ void MainWindow::handleClearSelection()
     emit statusUpdateMessage("Selection cleared", 2000);
 }
 
+/* Remove the currently selected item from the model tree and refresh the renderer.
+ */
 void MainWindow::removeSelectedItem()
 {
     QModelIndex index = ui->treeView->currentIndex();
@@ -504,6 +521,9 @@ void MainWindow::removeSelectedItem()
     }
 }
 
+/* Walk the model tree from the given index and add each part's VR actor to the thread.
+ * Returns the total number of actors added.
+ */
 int MainWindow::addVRActorsFromTree(const QModelIndex& index, VRRenderThread* thread)
 {
     int actorCount = 0;
@@ -535,6 +555,9 @@ int MainWindow::addVRActorsFromTree(const QModelIndex& index, VRRenderThread* th
     return actorCount;
 }
 
+/* Create a VR render thread, populate it with actors from the current model tree,
+ * and start the VR render loop. Falls back to a test cylinder if no STL is loaded.
+ */
 void MainWindow::startVR()
 {
     if (vrThread && vrThread->isRunning())
@@ -582,6 +605,8 @@ void MainWindow::startVR()
     vrThread->start();
 }
 
+/* Request the VR render thread to stop. The thread cleans up its own resources safely.
+ */
 void MainWindow::stopVR()
 {
     if (!vrThread || !vrThread->isRunning())
@@ -594,6 +619,9 @@ void MainWindow::stopVR()
     vrThread->stopVR();
 }
 
+/* Walk the model tree and queue a VR pipeline update for each part.
+ * Does nothing if VR is not currently running.
+ */
 void MainWindow::queueVRUpdatesFromTree(const QModelIndex& index)
 {
     if (!vrThread || !vrThread->isRunning())
